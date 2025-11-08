@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 import { loginUser } from '../services/user';
+import { useAuth } from '../hooks/AuthContext';
 
 const FormItem = ({ label, name, type = 'text', placeholder, value, onChange, required = true }) => (
     <div className="mb-4">
@@ -25,6 +26,7 @@ function LoginPage() {
     const [message, setMessage] = useState({ text: '', type: '' });
     const [formData, setFormData] = useState({email: '', password: '' });
     const navigate=useNavigate();
+    const {getCurrUser}=useAuth();
 
     const onFinish = async (e) => {
         e.preventDefault();
@@ -38,13 +40,15 @@ function LoginPage() {
                 return;
             }
 
+            console.log("formData",formData)
             const response = await loginUser(formData);
 
             if (response.success) {
                 setMessage({ text: response.message, type: 'success' });
                 localStorage.setItem("token",response.data)
+                await getCurrUser();
                 resetForm();
-                navigate('/');
+                navigate('/dashboard');
 
             } else {
                 setMessage({ text: response.message || "Registration failed.", type: 'error' });
@@ -84,12 +88,13 @@ function LoginPage() {
                 onChange={handleChange}
             />
             
-            <button 
+            <div 
+                onClick={onFinish}
                 type="submit" 
-                className="w-full py-2 mt-4 text-black font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
+                className="w-full py-2 mt-4 text-white bg-indigo-800 font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
             >
                 Login
-            </button>
+            </div>
         </form>
     );
 

@@ -18,6 +18,15 @@ export const getUserDocs=async()=>{
     }
 }
 
+export const getAllDocs=async()=>{
+    try{
+        const response=await axiosInstance.get('/api/documents/all')
+        return response.data
+    }catch(err){
+        console.log(err)
+    }
+}
+
 export const getDocById=async(id)=>{
     try{
         const response=await axiosInstance.get(`/api/documents/${id}`)
@@ -29,8 +38,6 @@ export const getDocById=async(id)=>{
 
 export const updateDocById=async(id,formData)=>{
     try{
-        console.log("formdata",formData)
-        console.log("id",id)
         const response=await axiosInstance.put(`/api/documents/${id}`,formData)
         return response.data
     }catch(err){

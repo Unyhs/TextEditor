@@ -89,12 +89,13 @@ function RegisterPage() {
                 onChange={handleChange}
             />
             
-            <button 
+            <div 
+                onClick={onFinish}
                 type="submit" 
-                className="w-full py-2 mt-4 text-black font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
+                className="w-full py-2 mt-4 bg-indigo-800 text-white font-semibold rounded-lg shadow-md hover:bg-indigo-700 transition duration-150"
             >
                 Register
-            </button>
+            </div>
         </form>
     );
 

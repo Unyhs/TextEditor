@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/AuthContext.jsx'; // To get the user's name
 import DocumentCard from '../components/DocumentCard.jsx'; // A component you will create later
 import { IoMdAddCircle } from "react-icons/io";
-import {createNewDoc,getUserDocs} from '../services/doc.js';
+import {createNewDoc,getUserDocs,getAllDocs} from '../services/doc.js';
 import { IoMdLogOut } from "react-icons/io";
 import { FaUser } from "react-icons/fa";
 
@@ -14,6 +14,7 @@ function Dashboard() {
     const userName = user?.name || 'User'; // Safely get the display name
     const [isLoading, setIsLoading] = useState(false);
     const [documents, setDocuments] = useState([]);
+    const [allDocuments, setAllDocuments] = useState([]);
 
     const handleCreateNewDocument = async() => {
    
@@ -47,8 +48,26 @@ function Dashboard() {
         }
     }
 
+    const fetchAllDocuments = async () => {
+        setIsLoading(true);
+        try{
+            const response = await getAllDocs();
+
+            if(response && response.success){
+                setAllDocuments(response.data);
+            }else{
+                console.log("Failed to fetch documents");
+            }
+        }catch(error){
+            console.log("error",error);
+        }finally{
+            setIsLoading(false);
+        }
+    }
+
     useEffect(() => {
         fetchAllUserDocuments();
+        fetchAllDocuments();
     }, []);
 
     if(isLoading){
@@ -86,7 +105,7 @@ function Dashboard() {
             </div>
             
             {/* 2. My Document Grid Layout */}
-            <main className='w-11/12'>
+            <main className='w-11/12 mt-8'>
                 <div className='w-full md:w-1/2 lg:w-1/4 xl:w-1/6 mb-6'>
                    <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">
                         My Documents
@@ -127,11 +146,31 @@ function Dashboard() {
                 <span className="hidden sm:inline">New Document</span>
             </div>
 
-            {/* <div className='w-full md:w-1/2 lg:w-1/4 xl:w-1/6 mb-6 mt-24'>
-                <h2 className="text-xl font-semibold text-gray-700 mb-4 border-b pb-2">
-                    Explore
-                </h2>
-            </div> */}
+            {/* 2. My Document Grid Layout */}
+            <main className='w-11/12 mt-8'>
+                <div className='w-full md:w-1/2 lg:w-1/4 xl:w-1/6 mb-6'>
+                   <h2 className="text-2xl font-semibold text-gray-700 mb-4 border-b pb-2">
+                        Explore All
+                    </h2>
+                </div>
+                
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                    {allDocuments.map(doc => (
+                        <DocumentCard 
+                            key={doc._id} 
+                            document={doc} 
+                            onClick={() => navigate(`/document/${doc._id}`)}
+                        />
+                    ))}
+                </div>
+                
+                {documents.length === 0 && (
+                    <div className="text-center p-12 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg mt-8">
+                        No documents found.
+                    </div>
+                )}
+            </main>
 
         </div>
     );

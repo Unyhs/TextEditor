@@ -8,9 +8,11 @@ const AuthContextWrapper=({children})=>{
     const [token,setToken]=useState(null);
     const [loading,setLoading]=useState(true);
     const [isAuthenticated,setIsAuthenticated]=useState(false);
+    console.log("user in auth context", user, "isAuthenticated",isAuthenticated)
 
     useEffect(()=>{
         const savedToken = localStorage.getItem('token');
+        console.log("saved toklen",savedToken)
         if (savedToken) setToken(savedToken);
         else setLoading(false);
     },[])
@@ -45,7 +47,7 @@ const AuthContextWrapper=({children})=>{
         }
     }, [token]);
 
-    return  <AuthContext.Provider value={{user,isAuthenticated,loading,logoutUser}}>{children}</AuthContext.Provider>
+    return  <AuthContext.Provider value={{user,isAuthenticated,loading,logoutUser,getCurrUser}}>{children}</AuthContext.Provider>
 }
 
 export const useAuth=()=>useContext(AuthContext);

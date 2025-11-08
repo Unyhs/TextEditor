@@ -12,8 +12,6 @@ const createNewDoc = async (req, res) => {
         const token=req.headers.authorization.split(" ")[1]
         const verifiedToken=jwt.verify(token,process.env.jwt_secret)
         const ownerId = verifiedToken.userId; 
-
-        console.log("owner is", ownerId)
         
         // Use a default title and empty content for a new document
         const newDocument = new docModel({
@@ -41,7 +39,7 @@ const createNewDoc = async (req, res) => {
 
 const getUserDocs = async (req, res) => {
     try {
-        const token=req.headers.authorization.split(" ")[1]
+        const token=req.headers?.authorization?.split(" ")[1]
         const verifiedToken=jwt.verify(token,process.env.jwt_secret)
         const userId = verifiedToken.userId; 
         
@@ -52,6 +50,49 @@ const getUserDocs = async (req, res) => {
                 { viewers: userId }
             ]
         })
+        .select('_id title owner editors viewers updatedAt') 
+        .populate('owner', 'name');
+        
+        // 2. Map over the results to inject permissions and clean up data.
+        const documentsWithPermissions = documents.map(doc => {
+
+            const docObject = doc.toObject(); 
+            
+            let permission = 'viewer'; // Default lowest permission
+            
+            if (docObject.owner===userId) {
+                permission = 'owner';
+            } else if (docObject.editors.some(editorId => editorId.equals(userId))) {
+                permission = 'editor';
+            }
+            
+            return {
+                _id: docObject._id,
+                title: docObject.title,
+                lastModified: docObject.updatedAt,
+                ownerName: docObject.owner.name,
+                userPermission: permission,
+            };
+        });
+        
+        res.status(200).send({
+            success: true,
+            data: documentsWithPermissions,
+        });
+
+    } catch (error) {
+        console.error("Error fetching user documents:", error);
+        sendError(res, "Failed to fetch user documents.");
+    }
+};
+
+const getAllDocs = async (req, res) => {
+    try {
+        const token=req.headers.authorization.split(" ")[1]
+        const verifiedToken=jwt.verify(token,process.env.jwt_secret)
+        const userId = verifiedToken.userId; 
+        
+        const documents = await docModel.find()
         .select('_id title owner editors viewers updatedAt') 
         .populate('owner', 'name');
         
@@ -102,18 +143,17 @@ const getDocById = async (req, res) => {
         }
 
         // Authorization Check: Must be owner, editor, or viewer
-        const isAuthorized = 
+        const isAuthorizedToEdit = 
             document.owner.equals(userId) || 
-            document.editors.includes(userId) || 
-            document.viewers.includes(userId);
+            document.editors.includes(userId);
 
-        if (!isAuthorized) {
-            return sendError(res, "Unauthorized access to document.", 403);
-        }
+        const newDocument = document.toObject();
+        newDocument.isAuthorizedToEdit = isAuthorizedToEdit;
+
 
         res.status(200).send({
             success: true,
-            data: document,
+            data: newDocument,
         });
 
     } catch (error) {
@@ -129,8 +169,6 @@ const updateDocById = async (req, res) => {
         const verifiedToken=jwt.verify(token,process.env.jwt_secret)
         const userId = verifiedToken.userId; 
         const { title, content } = req.body;
-
-        console.log("formdata",title," ",content)
 
         // Find and check authorization (only editors/owners can update)
         const document = await docModel.findById(id);
@@ -248,5 +286,6 @@ module.exports={
     getDocById,
     updateDocById,
     deleteDocById,
-    generateShareableLinkById
+    generateShareableLinkById,
+    getAllDocs
 }
