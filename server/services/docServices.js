@@ -1,4 +1,5 @@
 const docModel=require('../models/docModel')
+const userModel=require('../models/userModel')
 const jwt=require('jsonwebtoken')
 const crypto =require('crypto'); // Node's built-in module for secure token generation
 const { sendError } =require('../utils/errorHandling');
@@ -43,11 +44,10 @@ const getUserDocs = async (req, res) => {
             $or: [
                 { owner: userId },
                 { editors: userId },
-                { viewers: userId }
             ]
         })
-        .select('_id title owner editors viewers updatedAt') 
-        .populate('owner', 'name');
+        .select('_id title owner editors seekers updatedAt') 
+        .populate('owner', '_id name');
         
         // 2. Map over the results to inject permissions and clean up data.
         const documentsWithPermissions = documents.map(doc => {
@@ -58,7 +58,7 @@ const getUserDocs = async (req, res) => {
             
             if (docObject.owner===userId) {
                 permission = 'owner';
-            } else if (docObject.editors.some(editorId => editorId.equals(userId))) {
+            } else if (docObject?.editors?.some(editorId => editorId.equals(userId))) {
                 permission = 'editor';
             }
             
@@ -89,7 +89,7 @@ const getAllDocs = async (req, res) => {
         const userId = verifiedToken.userId; 
         
         const documents = await docModel.find()
-        .select('_id title owner editors viewers updatedAt') 
+        .select('_id title owner editors seekers updatedAt') 
         .populate('owner', 'name');
         
         // 2. Map over the results to inject permissions and clean up data.
@@ -101,7 +101,7 @@ const getAllDocs = async (req, res) => {
             
             if (docObject.owner===userId) {
                 permission = 'owner';
-            } else if (docObject.editors.some(editorId => editorId.equals(userId))) {
+            } else if (docObject.editors?.some(editorId => editorId.equals(userId))) {
                 permission = 'editor';
             }
             
@@ -138,14 +138,30 @@ const getDocById = async (req, res) => {
             return sendError(res, "Document not found.", 404);
         }
 
+        const userPromises = document.seekers.map((seekerId) => {
+            return userModel.findById(seekerId).select('name').lean(); 
+        });
+
+        const seekerObjects = await Promise.all(userPromises);
+        
+        const docSeekers = seekerObjects
+            .filter(seeker => seeker && seeker.name)
+            .map(seeker => ({
+                id: seeker._id,      
+                name: seeker.name
+            }));
+
         // Authorization Check: Must be owner, editor, or viewer
         const isAuthorizedToEdit = 
             document.owner.equals(userId) || 
             document.editors.includes(userId);
 
+        const isOwner=document.owner.equals(userId);
+
         const newDocument = document.toObject();
         newDocument.isAuthorizedToEdit = isAuthorizedToEdit;
-
+        newDocument.isOwner=isOwner;
+        newDocument.docSeekers=docSeekers;
 
         res.status(200).send({
             success: true,
@@ -174,11 +190,13 @@ const updateDocById = async (req, res) => {
         }
 
         // Authorization Check: Must be owner or editor
-        const isAuthorized = 
+        const isAuthorizedToEdit = 
             document.owner.equals(userId) || 
             document.editors.includes(userId);
 
-        if (!isAuthorized) {
+        const isOwner=document.owner.equals(userId);
+
+        if (!isAuthorizedToEdit) {
             return sendError(res, "Unauthorized: Only owners and editors can modify this document.", 403);
         }
 
@@ -188,10 +206,28 @@ const updateDocById = async (req, res) => {
 
         await document.save();
 
+        const userPromises = document.seekers.map((seekerId) => {
+            return userModel.findById(seekerId).select('name').lean(); 
+        });
+
+        const seekerObjects = await Promise.all(userPromises);
+        
+        const docSeekers = seekerObjects
+            .filter(seeker => seeker && seeker.name)
+            .map(seeker => ({
+                id: seeker._id,      
+                name: seeker.name
+            }));
+
+        const newDoc=document.toObject();
+        newDoc.isAuthorizedToEdit=isAuthorizedToEdit;
+        newDoc.isOwner=isOwner;
+        newDoc.docSeekers=docSeekers;
+
         res.status(200).send({
             success: true,
             message: "Document updated successfully.",
-            data: document,
+            data: newDoc,
         });
 
     } catch (error) {
@@ -276,6 +312,87 @@ const generateShareableLinkById = async (req, res) => {
     }
 };
 
+const seekEditAccess = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const token=req.headers.authorization.split(" ")[1]
+        const verifiedToken=jwt.verify(token,process.env.jwt_secret)
+        const userId = verifiedToken.userId; 
+
+        // Find and check authorization (only editors/owners can update)
+        const document = await docModel.findById(id);
+
+        if (!document) {
+            return sendError(res, "Document not found.", 404);
+        }
+
+        const docSeekers=document.seekers;
+
+        if(!docSeekers.includes(userId))
+        {
+            docSeekers.push(userId);
+        }
+
+        document.seekers=docSeekers;
+
+        await document.save();
+
+        res.status(200).send({
+            success: true,
+            message: "Document updated successfully.",
+            data: document,
+        });
+
+    } catch (error) {
+        console.error("Error updating document:", error);
+        sendError(res, "Failed to update document.", 500);
+    }
+};
+
+const giveEditAccess = async (req, res) => {
+    try {
+        const {id,seekerId}=req.body;
+        console.log(id,seekerId)
+
+        const ObjectId = docModel.base.Types.ObjectId; 
+        
+        const seekerObjectId = new ObjectId(seekerId);
+        const docId = new ObjectId(id);
+
+        // Find and check authorization (only editors/owners can update)
+        const document = await docModel.findById(docId);
+
+        if (!document) {
+            return sendError(res, "Document not found.", 404);
+        }
+
+        const docEditors=document.editors;
+
+        if(!docEditors.includes(seekerObjectId))
+        {
+            console.log("editor push")
+            docEditors.push(seekerObjectId);
+        }
+
+        const upSeekers = document.seekers.filter((seeker) => !seeker.equals(seekerObjectId));
+
+        document.editors=docEditors;
+        document.seekers=upSeekers;
+
+        await document.save();
+
+        res.status(200).send({
+            success: true,
+            message: "Document updated successfully.",
+            data: document,
+        });
+
+    } catch (error) {
+        console.error("Error updating document:", error);
+        sendError(res, "Failed to update document.", 500);
+    }
+};
+
 module.exports={
     createNewDoc,
     getUserDocs,
@@ -283,5 +400,7 @@ module.exports={
     updateDocById,
     deleteDocById,
     generateShareableLinkById,
-    getAllDocs
+    getAllDocs,
+    seekEditAccess,
+    giveEditAccess
 }

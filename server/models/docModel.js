@@ -19,7 +19,7 @@ const docSchema=new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users',
         default: []
-    }],viewers: [{
+    }],seekers: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'users',
         default: []

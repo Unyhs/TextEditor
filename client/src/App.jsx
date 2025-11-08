@@ -48,8 +48,6 @@ function App() {
           } 
         />
 
-        <Route  path="/aicheck" element={<Page/>} />
-
         </Routes>
       </AuthContextWrapper>
       </BrowserRouter>

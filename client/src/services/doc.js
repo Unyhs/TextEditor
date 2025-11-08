@@ -61,3 +61,21 @@ export const generateShareableLinkById=async(id)=>{
         console.log(err)
     }
 }
+
+export const seekEditAccess=async(id)=>{
+    try{
+        const response=await axiosInstance.put(`/api/documents/${id}/seekEditAccess`)
+        return response.data
+    }catch(err){
+        console.log(err)
+    }
+}
+
+export const giveEditAccess=async(payload)=>{
+    try{
+        const response=await axiosInstance.put('/api/documents/giveEditAccess',payload)
+        return response.data
+    }catch(err){
+        console.log(err)
+    }
+}

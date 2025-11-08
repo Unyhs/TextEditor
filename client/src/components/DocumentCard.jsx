@@ -26,7 +26,6 @@ function DocumentCard({ document }) {
 
     return (
         <div className="w-full max-w-xs transition-transform hover:scale-[1.02] duration-300">
-            
             <div className={cardAspectRatioClass}>
                 <div 
                     className="absolute inset-0 bg-white rounded-xl shadow-lg 

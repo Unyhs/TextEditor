@@ -1,6 +1,6 @@
 import React, { use, useEffect, useState } from 'react'
 import { useParams,useNavigate } from 'react-router-dom'
-import { getDocById, updateDocById } from '../services/doc';
+import { getDocById, giveEditAccess, seekEditAccess, updateDocById } from '../services/doc';
 import { FaRegSave } from "react-icons/fa";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import { FaRegTrashCan } from "react-icons/fa6";
@@ -10,6 +10,8 @@ import { useRef } from 'react';
 import { socket } from '../services/index';
 import {useAuth} from '../hooks/AuthContext';
 import {grammarCheck,enhance,summarize} from '../services/ai'
+import { FaEye } from "react-icons/fa";
+import { FaCheck } from "react-icons/fa";
 
 function DocEditor() {
     const {documentId}=useParams();
@@ -21,11 +23,15 @@ function DocEditor() {
     const [isSaving,setIsSaving]=useState(false);
     const [isLoading,setIsLoading]=useState(false);
     const [isAuthorizedToEdit,setIsAuthorizedToEdit]=useState(false);
+    const [isAccPerDisabled,setIsAccPerDisabled]=useState(false)
+    const [isOwner,setIsOwner]=useState(false);
     const [activeUsers,setActiveUsers]=useState([]);
 
     const [aiProcessing,setAiProcessing]=useState(false);
     const [showResult,setShowResult]=useState(false);
     const [aiResult,setAiResult]=useState("");
+
+    const [docSeekers,setDocSeekers]=useState([]);
 
     const timerRef=useRef(null);
     const quillRef = useRef(null);
@@ -110,9 +116,15 @@ function DocEditor() {
             const response =await getDocById(id);
 
             if(response && response.success){
-                setTitle(prev=>response.data.title);
-                setContent(prev=>response.data.content);
-                setIsAuthorizedToEdit(prev=>response.data.isAuthorizedToEdit);
+                setTitle(response.data.title);
+                setContent(response.data.content);
+                setIsAuthorizedToEdit(response.data.isAuthorizedToEdit);
+                setIsOwner(response.data.isOwner)
+                
+                if(response.data.isOwner && response.data.docSeekers) 
+                {
+                    setDocSeekers(response.data.docSeekers)
+                }
             }else
             {
                 console.error('Failed to fetch document data');
@@ -134,10 +146,14 @@ function DocEditor() {
             const response =await updateDocById(documentId,formData);
 
             if(response && response.success){
-                console.log("doc is",response.data)
-                setTitle(prev=>response.data.title);
-                setContent(prev=>response.data.content);
-                
+                setTitle(response.data.title);
+                setContent(response.data.content);
+                setIsAuthorizedToEdit(response.data.isAuthorizedToEdit);
+                setIsOwner(response.data.isOwner)
+                if(response.data.isOwner && response.data.docSeekers) 
+                {
+                    setDocSeekers(response.data.docSeekers)
+                }
             }else
             {
                 console.error('Failed to update document data');
@@ -222,6 +238,35 @@ function DocEditor() {
         setAiResult("")
     }
 
+    const handleSeekEditAccess=async()=>{
+        try{
+            const response =await seekEditAccess(documentId);
+            if(response && response.success){
+                setIsAccPerDisabled(true)
+            }else{
+                console.error('Failed to seek access');
+            }
+        }catch(err){
+            console.error('Error seeking access:', err);
+        }
+    }
+
+    const handleGiveEditAccess=async(seekerId)=>{
+        try{
+            console.log("seekerId",seekerId)
+            const payload={id:documentId,seekerId:seekerId}
+            const response =await giveEditAccess(payload);
+            if(response && response.success){
+                console.log("Access given")
+                updateDocumentData();
+            }else{
+                console.error('Failed to give access');
+            }
+        }catch(err){
+            console.error('Error giving access:', err);
+        }
+    }
+
     if(isLoading){
       return (
             <div className="flex justify-center items-center h-screen">
@@ -240,7 +285,9 @@ function DocEditor() {
                     backdropFilter: 'blur(5px)',
                   }}>
           <div className='bg-white p-10 rounded-2xl shadow-md w-11/12 md:w-2/3 lg:w-1/2' style={{height:0.95*screenHeight}}>
-                  <p className="text-lg text-gray-600">AI Processing....</p>
+                  <div className="flex justify-center items-center h-screen">
+                    <p className="text-lg text-gray-600">AI Processing...</p>
+                </div>
           </div>
 
     </div>
@@ -269,23 +316,39 @@ function DocEditor() {
                   </div>
 
                   <div className="flex space-x-3 ml-4">
-                      <div
-                          onClick={updateDocumentData}
-                          disabled={isSaving}
-                          className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
-                              ${isSaving ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-900 hover:bg-indigo-600 text-white shadow-md'}`}
-                      >
-                          <FaRegSave className="w-5 h-5 mr-2" />
-                          {isSaving ? 'Saving...' : 'Save'}
-                      </div>
-                      
-                      <div
-                          onClick={onClose}
-                          className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition duration-150"
-                          title="Close Document"
-                      >
-                          <IoCloseCircleOutline className="w-6 h-6" />
-                      </div>
+                    <div className='flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                                    bg-green-900 text-white shadow-md'>
+                          <FaEye className="w-5 h-5 mr-2" />
+                          {activeUsers.length}
+                    </div>
+
+                    <div
+                        onClick={updateDocumentData}
+                        disabled={isSaving}
+                        className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                            ${isSaving ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-900 hover:bg-indigo-600 hover:cursor-pointer text-white shadow-md'}`}
+                    >
+                        <FaRegSave className="w-5 h-5 mr-2" />
+                        {isSaving ? 'Saving...' : 'Save'}
+                    </div>
+
+                    {!isAuthorizedToEdit && !isAccPerDisabled && <div onClick={handleSeekEditAccess} className='flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                                    bg-orange-900 text-white shadow-md hover:cursor-pointer hover:bg-orange-700'>
+                          Get Edit Access
+                    </div>}
+
+                    {!isAuthorizedToEdit && isAccPerDisabled && <div className='flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                                    bg-orange-900 text-white shadow-md'>
+                        Access Pending
+                    </div>}
+                    
+                    <div
+                        onClick={onClose}
+                        className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition duration-150"
+                        title="Close Document"
+                    >
+                        <IoCloseCircleOutline className="w-6 h-6" />
+                    </div>
                   </div>
               </header>
 
@@ -334,7 +397,7 @@ function DocEditor() {
                         </div>
                 </div>
                 {showResult && 
-                <div className='bg-gray-100 flex-col items-start p-4 relative'>
+                <div className='bg-indigo-100 flex-col items-start p-4 relative'>
                     <div className='justify-self-start'>
                         Results:
                     </div>
@@ -365,6 +428,31 @@ function DocEditor() {
                     className="mb-4"
                 />
 
+                {isOwner && 
+                <div>
+                    <span className='font-bold text-indigo-900'>
+                        Manage Permissions
+                    </span>
+                    
+                    {docSeekers && docSeekers.length>0 && <div className='flex gap-4 mt-1 py-4'>
+                        {docSeekers.map((seeker)=>
+                        (<div key={seeker.id} className='flex justify-between p-4 border-1 border-gray-400 rounded-xl gap-4 '>
+                            <div>
+                                {seeker.name}
+                            </div>
+                            <div onClick={()=>{
+                                console.log("seeker arg", seeker)
+                                handleGiveEditAccess(seeker.id)
+                            }} className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
+                                <FaCheck className="w-5 h-5 mr-2 text-white" />
+                            </div>
+                        </div>))}
+                    </div>
+                    }
+                </div>
+                }
+                
+                {/* 
                 <div className="min-w-full my-4">
                 {activeUsers.length > 0 && (
                     <div className="mb-2 p-2 bg-blue-100 rounded">
@@ -379,7 +467,8 @@ function DocEditor() {
                         <p className="text-sm text-gray-600 font-medium">No active users currently.</p>
                     </div>
                 )}
-                </div>
+                </div> */}
+
               </div>
           </div>
 
