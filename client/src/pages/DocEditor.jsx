@@ -9,6 +9,7 @@ import 'react-quill/dist/quill.snow.css'; // The default theme
 import { useRef } from 'react';
 import { socket } from '../services/index';
 import {useAuth} from '../hooks/AuthContext';
+import {grammarCheck,enhance,summarize} from '../services/ai'
 
 function DocEditor() {
     const {documentId}=useParams();
@@ -21,6 +22,11 @@ function DocEditor() {
     const [isLoading,setIsLoading]=useState(false);
     const [isAuthorizedToEdit,setIsAuthorizedToEdit]=useState(false);
     const [activeUsers,setActiveUsers]=useState([]);
+
+    const [aiProcessing,setAiProcessing]=useState(false);
+    const [showResult,setShowResult]=useState(false);
+    const [aiResult,setAiResult]=useState("");
+
     const timerRef=useRef(null);
     const quillRef = useRef(null);
     const latestStateRef = useRef({ title: '', content: '' });
@@ -143,8 +149,77 @@ function DocEditor() {
         }
     }
 
+    const aiGrammarCheck=async()=>{
+        setAiProcessing(true);
+        try{
+            const response=await grammarCheck(latestStateRef.current.content);
+            if(response && response.success)
+            {
+                setAiResult(response.data)
+                setShowResult(true);
+            }else
+            {
+                console.log("error")
+            }
+        }catch(error)
+        {
+            console.log("Error encountered in grammar check",error)
+        }finally
+        {
+            setAiProcessing(false);
+        }
+    }
+
+    const aiEnhance=async()=>{
+        setAiProcessing(true);
+        try{
+            const response=await enhance(latestStateRef.current.content);
+            if(response && response.success)
+            {
+                setAiResult(response.data)
+                setShowResult(true);
+            }else
+            {
+                console.log("error")
+            }
+        }catch(error)
+        {
+            console.log("Error encountered in enhance",error)
+        }finally
+        {
+            setAiProcessing(false);
+        }
+    }
+
+    const aiSummarize=async()=>{
+        setAiProcessing(true);
+        try{
+            const response=await summarize(latestStateRef.current.content);
+            if(response && response.success)
+            {
+                setAiResult(response.data)
+                setShowResult(true);
+            }else
+            {
+                console.log("error")
+            }
+        }catch(error)
+        {
+            console.log("Error encountered in summarize",error)
+        }finally
+        {
+            setAiProcessing(false);
+        }
+    }
+
     const onClose=()=>{
       navigate("/");
+    }
+
+    const handleResultClose=()=>{
+        setAiProcessing(false);
+        setShowResult(false);
+        setAiResult("")
     }
 
     if(isLoading){
@@ -154,14 +229,31 @@ function DocEditor() {
             </div>
         );
     }
-  
-    return (
-      <div className='min-h-screen flex items-center justify-center'
+
+    if(aiProcessing)
+    {
+        return (
+        <div className='min-h-screen flex items-center justify-center'
                 style={{ width:'100%',
                     height:'100%',
                     backgroundColor: 'rgba(0, 0, 0, 0.4)',
                     backdropFilter: 'blur(5px)',
                   }}>
+          <div className='bg-white p-10 rounded-2xl shadow-md w-11/12 md:w-2/3 lg:w-1/2' style={{height:0.95*screenHeight}}>
+                  <p className="text-lg text-gray-600">AI Processing....</p>
+          </div>
+
+    </div>
+  )
+    }
+  
+    return (
+    <div className='min-h-screen flex items-center justify-center'
+        style={{ width:'100%',
+                height:'100%',
+                backgroundColor: 'rgba(0, 0, 0, 0.4)',
+                backdropFilter: 'blur(5px)',
+                }}>
           <div className='bg-white p-10 rounded-2xl shadow-md w-11/12 md:w-2/3 lg:w-1/2' style={{height:0.95*screenHeight}}>
 
               <header className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
@@ -197,10 +289,86 @@ function DocEditor() {
                   </div>
               </header>
 
-              <div className="min-w-full my-4">
+              <div className="min-w-full my-4 min-h-full">
+                <div className="mb-2 p-2 rounded flex-col items-center">
+                        <span className="text-indigo-800 font-bold">Check out our AI Tools</span>
+                        <div className='flex items-center w-full justify-center gap-4 mt-4'>
+                            <span
+                            onClick={aiGrammarCheck}
+                            className="text-white bg-indigo-600 font-bold
+                                        hover:bg-white hover:text-indigo-600 hover:border-2 hover: border-indigo-600 hover:cursor-pointer
+                                        px-4 py-1 rounded-full 
+                                        shadow-lg 
+                                        transition-all duration-300 
+                                        flex items-center space-x-2 
+                                        transform"
+                            >
+                            <span className="hidden sm:inline">Grammar Check</span>
+                            </span>
+
+                            <span
+                                onClick={aiSummarize}
+                                className="text-white bg-indigo-600 font-bold
+                                        hover:bg-white hover:text-indigo-600 hover:border-2 hover: border-indigo-600 hover:cursor-pointer
+                                        px-4 py-1 rounded-full 
+                                        shadow-lg 
+                                        transition-all duration-300 
+                                        flex items-center space-x-2 
+                                        transform"
+                                >
+                                <span className="hidden sm:inline">Summary</span>
+                            </span>
+
+                            <span
+                            onClick={aiEnhance}
+                                className="text-white bg-indigo-600 font-bold
+                                        hover:bg-white hover:text-indigo-600 hover:border-2 hover: border-indigo-600 hover:cursor-pointer
+                                        px-4 py-1 rounded-full 
+                                        shadow-lg 
+                                        transition-all duration-300 
+                                        flex items-center space-x-2 
+                                        transform"
+                                >
+                                <span className="hidden sm:inline">Enhance</span>
+                            </span>
+                        </div>
+                </div>
+                {showResult && 
+                <div className='bg-gray-100 flex-col items-start p-4 relative'>
+                    <div className='justify-self-start'>
+                        Results:
+                    </div>
+                    <div className='justify-self-start bg-white mb-4 w-full rounded-xl p-2 text-justify'>
+                        {aiResult}
+                    </div>
+                    <div
+                          onClick={handleResultClose}
+                          className="p-2 absolute top-1 right-2 text-gray-500 hover:bg-gray-200 rounded-full transition duration-150"
+                          title="Close Result"
+                      >
+                          <IoCloseCircleOutline className="w-6 h-6" />
+                      </div>
+                </div>}
+                <ReactQuill 
+                    theme="snow"
+                    ref={quillRef}
+                    value={content} 
+                    readOnly={!isAuthorizedToEdit}
+                    onChange={(value,delta,source) => {
+                        setContent(value); 
+
+                        if(source === 'user' && isAuthorizedToEdit){
+                            socket.emit('text-change', delta);
+                        }
+
+                    }}
+                    className="mb-4"
+                />
+
+                <div className="min-w-full my-4">
                 {activeUsers.length > 0 && (
                     <div className="mb-2 p-2 bg-blue-100 rounded">
-                        <p className="text-sm text-blue-800 font-medium">Active Users:</p>
+                        <span className="text-sm text-blue-800 font-medium">Active Users: </span>
                         {activeUsers.map((userName, index) => (
                             <span key={index} className="text-sm text-blue-700 mr-2">{userName}</span>
                         ))}
@@ -211,26 +379,8 @@ function DocEditor() {
                         <p className="text-sm text-gray-600 font-medium">No active users currently.</p>
                     </div>
                 )}
+                </div>
               </div>
-
-              <div className="min-w-full my-4 min-h-full">
-                  <ReactQuill 
-                      theme="snow"
-                      ref={quillRef}
-                      value={content} 
-                      readOnly={!isAuthorizedToEdit}
-                      onChange={(value,delta,source) => {
-                          setContent(value); 
-
-                          if(source === 'user' && isAuthorizedToEdit){
-                              socket.emit('text-change', delta);
-                          }
-
-                      }}
-                      className="min-h-[60vh]"
-                  />
-              </div>
-
           </div>
 
     </div>

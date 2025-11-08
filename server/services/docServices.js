@@ -1,11 +1,7 @@
 const docModel=require('../models/docModel')
 const jwt=require('jsonwebtoken')
 const crypto =require('crypto'); // Node's built-in module for secure token generation
-
-// --- Helper for consistent error response ---
-const sendError = (res, message, status = 500) => {
-    return res.status(status).send({ success: false, message });
-};
+const { sendError } =require('../utils/errorHandling');
 
 const createNewDoc = async (req, res) => {
     try {

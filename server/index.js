@@ -8,6 +8,12 @@ const initializeSocket = require('./services/socketServices');
 const {createServer}=require('http')
 const httpServer=createServer(app)
 
+//entity routers
+const userRouter=require("./routes/userRoutes")
+const docRouter=require("./routes/docRoutes")
+const aiRouter=require("./routes/aiRoutes")
+
+
 //DB Connection
 require ('dotenv').config()
 const connectDB=require("./config/db")
@@ -30,13 +36,10 @@ const io = new SocketIOServer(httpServer, {
 
 initializeSocket(io);
 
-//entity routers
-const userRouter=require("./routes/userRoutes")
-const docRouter=require("./routes/docRoutes")
-
 //all calls for entities will go through here
 app.use("/api/auth",userRouter)
 app.use("/api/documents",docRouter)
+app.use("/api/ai",aiRouter)
 
 //listening to requests
 const serverPort=8082
