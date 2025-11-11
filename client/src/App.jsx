@@ -6,7 +6,6 @@ import RegisterPage from './pages/RegisterPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import DocEditor from './pages/DocEditor.jsx'
-import Page from './pages/Page.jsx'
 
 const Redirect=()=>{
   const {isAuthenticated} = useAuth();
