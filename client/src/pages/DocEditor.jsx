@@ -1,17 +1,25 @@
+
 import React, { use, useEffect, useState } from 'react'
 import { useParams,useNavigate } from 'react-router-dom'
 import { getDocById, giveEditAccess, seekEditAccess, updateDocById } from '../services/doc';
 import { FaRegSave } from "react-icons/fa";
 import { IoCloseCircleOutline } from "react-icons/io5";
 import { FaRegTrashCan } from "react-icons/fa6";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // The default theme
 import { useRef } from 'react';
 import { socket } from '../services/index';
 import {useAuth} from '../hooks/AuthContext';
 import {grammarCheck,enhance,summarize} from '../services/ai'
 import { FaEye } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; // The default theme
+const Quill = ReactQuill.Quill;
+import { QuillCursors } from 'quill-cursors';
+if(Quill)
+    {
+        Quill.register('modules/cursors', QuillCursors);
+    }
+
 
 function DocEditor() {
     const {documentId}=useParams();
@@ -30,12 +38,18 @@ function DocEditor() {
     const [aiProcessing,setAiProcessing]=useState(false);
     const [showResult,setShowResult]=useState(false);
     const [aiResult,setAiResult]=useState("");
-
     const [docSeekers,setDocSeekers]=useState([]);
+
 
     const timerRef=useRef(null);
     const quillRef = useRef(null);
     const latestStateRef = useRef({ title: '', content: '' });
+
+    const modules= {
+        cursors: {
+            transformOnTextChange: true, 
+        },
+    };
 
      useEffect(()=>{
         if(documentId){
@@ -69,7 +83,17 @@ function DocEditor() {
     }, [title, content]);
 
     useEffect(() => {
+    const editor = quillRef?.current?.getEditor();
+    if (editor && !editor.cursors) { 
+        editor.cursors = editor.getModule('cursors'); 
+        console.log("Quill Cursors Initialized.");
+    }
+    }, [quillRef.current]);
+
+    useEffect(() => {
         if (!documentId) return;
+
+        const editor = quillRef?.current?.getEditor();
         
         socket.emit('join-document', documentId, (response) => {
             if (response.success) {
@@ -79,18 +103,36 @@ function DocEditor() {
         });
 
         socket.on('text-change', (data) => {
-            const editor = quillRef.current.getEditor();
-            
             if (isAuthorizedToEdit && editor && data.delta) {
                 editor.updateContents(data.delta);
             }
         });
-        
+
+        editor.on('selection-change',(range,oldRange,source)=>{
+            if(source==='user' && range)
+            {
+                socket.emit('send-cursor',{
+                    documentId:documentId,
+                    range:range,
+                });
+            }
+        })
+
+        socket.on('cursor-update',(data)=>{
+            console.log("editor is ",editor)
+            const cursors=editor.cursors;
+            console.log("cursoers are",cursors);
+
+            if(user.id===data.userId) return;
+
+            cursors.setCursor(data.userId,data.range,data.name,getUserColor(data.userId));
+        });
+
         socket.on('user-joined', (data) => {
             console.log(`User ${data.userId} has joined.`);
             setActiveUsers(prev => {
-            if (!prev.includes(data.userId)) {
-                return [...prev, data.userId];
+            if (!prev.includes((u)=>u.id===data.userId)) {
+                return [...prev, {id:data.userId,name:data.name}];
             }
             return prev;
             });
@@ -98,7 +140,11 @@ function DocEditor() {
 
         socket.on('user-left', (data) => {
             console.log(`User ${data.userId} has left.`);
-            setActiveUsers(prev=>prev.filter(u=>u!==data.userId));
+            setActiveUsers(prev=>prev.filter(u=>u.id!==data.userId));
+            if(editor && editor.cursors)
+            {
+                editor.cursors.removeCursor(data.userId)
+            }
         });
         
         return () => {
@@ -106,9 +152,19 @@ function DocEditor() {
             socket.off('user-joined');
             socket.off('user-left');
             socket.emit('leave-document');
-            setActiveUsers(prev=>prev.filter(u=>u!==user.userId));
+            socket.off('cursor-update')
+            setActiveUsers(prev=>prev.filter(u=>u.id!==user.userId));
+
+            if(editor)
+            {
+                editor.off('selection-change');
+            }
         };
     }, [documentId, isAuthorizedToEdit]); 
+
+    const getUserColor = (userId) => {
+    return `#${(parseInt(userId.substring(0, 6), 16) % 0xFFFFFF).toString(16).padStart(6, '0')}`;
+    }
 
     const getDocumentData=async(id)=>{
         setIsLoading(true);
@@ -253,7 +309,6 @@ function DocEditor() {
 
     const handleGiveEditAccess=async(seekerId)=>{
         try{
-            console.log("seekerId",seekerId)
             const payload={id:documentId,seekerId:seekerId}
             const response =await giveEditAccess(payload);
             if(response && response.success){
@@ -412,10 +467,12 @@ function DocEditor() {
                           <IoCloseCircleOutline className="w-6 h-6" />
                       </div>
                 </div>}
+
                 <ReactQuill 
                     theme="snow"
                     ref={quillRef}
                     value={content} 
+                    modules={modules}
                     readOnly={!isAuthorizedToEdit}
                     onChange={(value,delta,source) => {
                         setContent(value); 
@@ -441,7 +498,6 @@ function DocEditor() {
                                 {seeker.name}
                             </div>
                             <div onClick={()=>{
-                                console.log("seeker arg", seeker)
                                 handleGiveEditAccess(seeker.id)
                             }} className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
                                 <FaCheck className="w-5 h-5 mr-2 text-white" />
@@ -452,13 +508,13 @@ function DocEditor() {
                 </div>
                 }
                 
-                {/* 
+                
                 <div className="min-w-full my-4">
                 {activeUsers.length > 0 && (
                     <div className="mb-2 p-2 bg-blue-100 rounded">
                         <span className="text-sm text-blue-800 font-medium">Active Users: </span>
-                        {activeUsers.map((userName, index) => (
-                            <span key={index} className="text-sm text-blue-700 mr-2">{userName}</span>
+                        {activeUsers.map((u, index) => (
+                            <span key={index} className="text-sm text-blue-700 mr-2">{u.name}</span>
                         ))}
                     </div>
                 )}
@@ -467,7 +523,7 @@ function DocEditor() {
                         <p className="text-sm text-gray-600 font-medium">No active users currently.</p>
                     </div>
                 )}
-                </div> */}
+                </div>
 
               </div>
           </div>
