@@ -22,15 +22,17 @@ connectDB();
 //middlewares
 app.use(express.json())
 app.use(cors({
-    origin:'*',
+    origin:'http://localhost:3000',
     methods:['GET','POST','PUT','PATCH','DELETE'],
     allowedHeaders:['Content-Type','Authorization'],
+    credentials:true,
 })) 
 
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: '*', 
-        methods: ['GET', 'POST']
+        origin:'http://localhost:3000',
+        methods: ['GET', 'POST'],
+        credentials:true,
     }
 });
 
@@ -43,7 +45,7 @@ app.use("/api/ai",aiRouter)
 
 //listening to requests
 const serverPort=8082
-httpServer.listen(serverPort,()=>{
-    console.log(`Server is running at port ${serverPort}`)
+httpServer.listen(serverPort,'0.0.0.0',()=>{
+    console.log(`Server is running at port 0.0.0.0 ${serverPort}`)
 })
 

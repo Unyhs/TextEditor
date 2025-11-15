@@ -1,15 +1,13 @@
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dependencies
 COPY package*.json ./
-RUN npm install --production
 
-# Copy code
+RUN npm install
+
 COPY . .
 
-# Your server listens on 8082
 EXPOSE 8082
 
-CMD ["npm", "start"]
+CMD ["npm", "run", "dev"]

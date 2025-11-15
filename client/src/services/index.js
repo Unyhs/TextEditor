@@ -1,11 +1,13 @@
 import axios from 'axios'
 import { io } from 'socket.io-client';
 
+const SERVER_URL = import.meta.env.VITE_SERVER_URL || 'http://localhost:3000';
+
 export const axiosInstance=axios.create({
     headers:{
         "Content-Type":"application/json",
     },
-    baseURL:'http://localhost:8082'
+    baseURL:SERVER_URL
 })
 
 axiosInstance.interceptors.request.use(function(config){
@@ -17,7 +19,7 @@ function(error){
     return Promise.reject(error)
 })
 
-export const socket=io('http://localhost:8082',{
+export const socket=io(SERVER_URL,{
     transports:['websocket'],
     auth:{
         token:localStorage.getItem('token')
