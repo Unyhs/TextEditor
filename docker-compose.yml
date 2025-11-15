@@ -1,0 +1,20 @@
+version: "3.9"
+
+services:
+  client:
+    build: ./client
+    container_name: mern_client
+    restart: always
+    ports:
+      - "3000:80"       # host:container (Nginx serves dist/ on port 80)
+    depends_on:
+      - server
+
+  server:
+    build: ./server
+    container_name: mern_server
+    restart: always
+    ports:
+      - "8082:8082"
+    env_file:
+      - ./server/.env
