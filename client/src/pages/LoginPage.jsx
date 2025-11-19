@@ -39,8 +39,6 @@ function LoginPage() {
                 setMessage({ text: "Please fill all mandatory fields.", type: 'error' });
                 return;
             }
-
-            console.log("formData",formData)
             const response = await loginUser(formData);
 
             if (response.success) {

@@ -19,8 +19,7 @@ const createNewDoc = async (req, res) => {
         });
 
         await newDocument.save();
-        
-        console.log("new document is ", newDocument)
+
         // Return the new document ID for frontend navigation
         res.status(201).send({
             success: true,
@@ -352,7 +351,6 @@ const seekEditAccess = async (req, res) => {
 const giveEditAccess = async (req, res) => {
     try {
         const {id,seekerId}=req.body;
-        console.log(id,seekerId)
 
         const ObjectId = docModel.base.Types.ObjectId; 
         
@@ -370,7 +368,6 @@ const giveEditAccess = async (req, res) => {
 
         if(!docEditors.includes(seekerObjectId))
         {
-            console.log("editor push")
             docEditors.push(seekerObjectId);
         }
 
