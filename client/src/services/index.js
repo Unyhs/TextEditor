@@ -20,7 +20,7 @@ function(error){
 })
 
 export const socket=io(SERVER_URL,{
-    transports:['websocket'],
+    transports:['polling','websocket'],
     auth:{
         token:localStorage.getItem('token')
     },
