@@ -12,9 +12,7 @@ const initializeSocket = (io) => {
         }
         try {
             const verified = jwt.verify(token, process.env.JWT_SECRET);
-            console.log(verified)
             const userId = verified.userId;
-            console.log(userId);
 
             socket.userId = userId; 
             next();

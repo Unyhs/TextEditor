@@ -6,12 +6,7 @@ services:
     container_name: mern_client
     restart: always
     ports:
-      - "3000:5173"
-    env_file:
-      - ./client/.env
-    volumes:
-      - ./client:/app 
-      - /app/node_modules
+      - "3000:80"       # host:container (Nginx serves dist/ on port 80)
     depends_on:
       - server
 
@@ -23,6 +18,3 @@ services:
       - "8082:8082"
     env_file:
       - ./server/.env
-    volumes:
-      - ./server:/app 
-      - /app/node_modules

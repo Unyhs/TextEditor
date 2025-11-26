@@ -1,14 +1,23 @@
 # --- Build stage ---
-FROM node:20-alpine AS build
+FROM node:18-alpine AS build
 
 WORKDIR /app
 
 COPY package*.json ./
-
 RUN npm install
 
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# --- Production serve stage ---
+FROM nginx:stable-alpine
 
-CMD ["npm", "run", "dev"]
+# Remove default nginx page
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy React/Vite built files
+COPY --from=build /app/dist /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -28,17 +28,16 @@ const loginUser=async(req,res)=>{
         const {email,password}=req.body;
 
         if(!email || !password){
-             return res.status(402).json({success:false,message:"EMail and Password are required fields"})
+             return res.send({success:false,message:"EMail and Password are required fields"})
         }
     try{
         const userExists=await userModel.findOne({email})
-        if(!userExists) return res.status(402).json({success:false,message:"User not found. Please register."})
+        if(!userExists) return res.send({success:false,message:"User not found. Please register."})
 
         const isMatch=await bcrypt.compare(password,userExists.password)
-        if(!isMatch) return res.status(402).json({success:false,message:"Incorrect Password."})
-
+        if(!isMatch) return res.send({success:false,message:"Incorrect Password."})
         const token=jwt.sign({userId:userExists._id},process.env.jwt_secret,{expiresIn:'1d'})
-        return res.status(200).json({success:true,message:`You have been logged in.`,data:token})
+        return res.send({success:true,message:`You have been logged in.`,data:token})
     }catch(err)
     {
         return res.status(400).json({message:err.message})
