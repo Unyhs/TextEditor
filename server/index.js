@@ -15,17 +15,14 @@ const aiRouter=require("./routes/aiRoutes")
 
 
 //DB Connection
-//commnented out for AWS testing
-//require ('dotenv').config()
+require ('dotenv').config()
 const connectDB=require("./config/db")
 connectDB();
-
-const clientUrl=process.env.CLIENT_URL
 
 //middlewares
 app.use(express.json())
 app.use(cors({
-    origin:clientUrl,
+    origin:'http://localhost:3000',
     methods:['GET','POST','PUT','PATCH','DELETE'],
     allowedHeaders:['Content-Type','Authorization'],
     credentials:true,
@@ -33,7 +30,7 @@ app.use(cors({
 
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin:clientUrl,
+        origin:'http://localhost:3000',
         methods: ['GET', 'POST'],
         credentials:true,
     }

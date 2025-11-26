@@ -1,5 +1,4 @@
-//require('dotenv').config();
-//commented out for AWS testing
+require('dotenv').config();
 const GoogleGenAI = require('@google/genai').GoogleGenAI;
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const { sendError } =require('../utils/errorHandling');

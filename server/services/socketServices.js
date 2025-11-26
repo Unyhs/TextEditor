@@ -1,7 +1,6 @@
 const docModel =require('../models/docModel.js');
 const jwt = require('jsonwebtoken');
-//require ('dotenv').config()
-//commented for aws testing
+require ('dotenv').config()
 const documentUsers = {};
 
 const initializeSocket = (io) => {
