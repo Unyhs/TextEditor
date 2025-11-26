@@ -20,6 +20,7 @@ export const loginUser=async(formData)=>{
 
 export const getCurrentUser=async()=>{
     try{
+        console.log("client services")
         const response=await axiosInstance.get('/api/auth/me')
         return response.data
     }catch(err){

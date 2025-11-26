@@ -12,8 +12,12 @@ const initializeSocket = (io) => {
             return next(new Error("Authentication error: Token missing."));
         }
         try {
+            console.log("line 14")
+            console.log(process.env.jwt_secret);
             const verified = jwt.verify(token, process.env.jwt_secret);
+            console.log(verified)
             const userId = verified.userId;
+            console.log(userId);
 
             socket.userId = userId; 
             next();

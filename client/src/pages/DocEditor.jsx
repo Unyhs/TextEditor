@@ -253,6 +253,7 @@ function DocEditor() {
 
     const handleGiveEditAccess=async(seekerId)=>{
         try{
+            console.log("seekerId",seekerId)
             const payload={id:documentId,seekerId:seekerId}
             const response =await giveEditAccess(payload);
             if(response && response.success){
@@ -440,6 +441,7 @@ function DocEditor() {
                                 {seeker.name}
                             </div>
                             <div onClick={()=>{
+                                console.log("seeker arg", seeker)
                                 handleGiveEditAccess(seeker.id)
                             }} className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
                                 <FaCheck className="w-5 h-5 mr-2 text-white" />
