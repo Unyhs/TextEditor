@@ -428,7 +428,7 @@ function DocEditor() {
                     className="mb-4"
                 />
 
-                {isOwner && 
+                {isOwner && docSeekers && docSeekers.length>0 &&
                 <div>
                     <span className='font-bold text-indigo-900'>
                         Manage Permissions

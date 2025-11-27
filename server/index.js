@@ -42,7 +42,7 @@ app.use("/api/documents",docRouter)
 app.use("/api/ai",aiRouter)
 
 //listening to requests
-const serverPort=8082
+const serverPort=8083
 httpServer.listen(serverPort,()=>{
     console.log(`Server is running at port ${serverPort}`)
 })
