@@ -13,23 +13,25 @@ const userRouter=require("./routes/userRoutes")
 const docRouter=require("./routes/docRoutes")
 const aiRouter=require("./routes/aiRoutes")
 
+const clientUrl=process.env.CLIENT_URL
 
 //DB Connection
-require ('dotenv').config()
+//commented out for production deployment
+//require ('dotenv').config()
 const connectDB=require("./config/db")
 connectDB();
 
 //middlewares
 app.use(express.json())
 app.use(cors({
-    origin:'*',
+    origin:clientUrl,
     methods:['GET','POST','PUT','PATCH','DELETE'],
     allowedHeaders:['Content-Type','Authorization'],
 })) 
 
 const io = new SocketIOServer(httpServer, {
     cors: {
-        origin: '*', 
+        origin: clientUrl, 
         methods: ['GET', 'POST']
     }
 });
@@ -42,7 +44,7 @@ app.use("/api/documents",docRouter)
 app.use("/api/ai",aiRouter)
 
 //listening to requests
-const serverPort=8083
+const serverPort=8082
 httpServer.listen(serverPort,()=>{
     console.log(`Server is running at port ${serverPort}`)
 })
