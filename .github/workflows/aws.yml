@@ -100,7 +100,6 @@ jobs:
             docker push $IMAGE_URI
             echo "Server Image pushed to ECR: $IMAGE_URI"
     
-
     deploy:
       needs: [build-client, build-server] # Waits for both builds
       runs-on: ubuntu-latest
@@ -119,8 +118,8 @@ jobs:
       - name: Render Task Definition (Inject Images and Secrets)
         id: render-task-def
         env:
-          CLIENT_IMAGE: ${{ needs.build-client.outputs.image }}
-          SERVER_IMAGE: ${{ needs.build-server.outputs.image }}
+          CLIENT_IMAGE: ${{ needs.build-client.outputs.ECR_CLIENT_IMAGE_URI }}
+          SERVER_IMAGE: ${{ needs.build-server.outputs.ECR_SERVER_IMAGE_URI }}
         run: |
           # Install jq for JSON processing
           sudo apt-get install jq -y
@@ -131,6 +130,9 @@ jobs:
           # Update Client Image
           TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$CLIENT_IMAGE" --arg NAME "$CONTAINER_NAME_CLIENT" \
             '.containerDefinitions[] |= if .name == $NAME then .image = $IMAGE else . end')
+
+          echo "Client Image received to ECR: $CLIENT_IMAGE"
+          echo "Server Image received to ECR: $SERVER_IMAGE"
 
           # Update Server Image AND Inject Secrets into Server Environment
           TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$SERVER_IMAGE" --arg NAME "$CONTAINER_NAME_SERVER" \
