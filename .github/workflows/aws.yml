@@ -55,6 +55,7 @@ jobs:
           id: build-image
           run: |
             IMAGE_URI=${{ steps.set-tag-client.outputs.ECR_CLIENT_IMAGE_URI }}
+            echo "Image pushed to ECR: $IMAGE_URI"
             
             docker build \
                 --build-arg VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL_VALUE }} \
@@ -93,6 +94,7 @@ jobs:
           id: build-image
           run: |
             IMAGE_URI=${{ steps.set-tag-server.outputs.ECR_SERVER_IMAGE_URI }}
+            echo "Image pushed to ECR: $IMAGE_URI"
             
             docker build \
                 -t $IMAGE_URI \
