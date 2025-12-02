@@ -9,6 +9,7 @@ on:
 
 env:
   AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: 437639821200
   # ECR Repository Names
   ECR_CLIENT_REPO: mern/texteditor-client-ga
   ECR_SERVER_REPO: mern/texteditor-server-ga
@@ -47,7 +48,7 @@ jobs:
           id: set-tag-client
           run: |
             SHORT_SHA=$(git rev-parse --short HEAD)
-            FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_CLIENT_REPOSITORY }}:${SHORT_SHA}"
+            FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_CLIENT_REPO}}:${SHORT_SHA}"
             echo "ECR_CLIENT_IMAGE_URI=$FULL_URI" >> $GITHUB_OUTPUT
 
         - name: Build and push Client image
@@ -85,7 +86,7 @@ jobs:
           id: set-tag-server
           run: |
             SHORT_SHA=$(git rev-parse --short HEAD)
-            FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPOSITORY }}:${SHORT_SHA}"
+            FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPO}}:${SHORT_SHA}"
             echo "ECR_SERVER_IMAGE_URI=$FULL_URI" >> $GITHUB_OUTPUT
 
         - name: Build and push Client image
