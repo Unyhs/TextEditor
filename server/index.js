@@ -50,6 +50,6 @@ app.use("/api/ai",aiRouter)
 //listening to requests
 const serverPort=8082
 httpServer.listen(serverPort,()=>{
-    console.log(`Server is running at port ${serverPort}`)
+    console.log(`Server is running at the port ${serverPort}`)
 })
 
