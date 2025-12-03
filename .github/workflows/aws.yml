@@ -16,7 +16,6 @@ env:
   ECS_SERVICE: task_definition_mern_texteditor-github-actions-service-bq6mprnq # Use your service name
   ECS_CLUSTER: mern-TextEditor-Cluster-GitHubActions # Use your cluster name
   ECS_TASK_DEF_PATH: .aws/task-definition.json
-  SERVICE_DEFINITION_PATH: .aws/service-definition.json
   # Container Names in Task Definition
   CONTAINER_NAME_CLIENT: mern-texteditor-client-container
   CONTAINER_NAME_SERVER: mern-texteditor-server-container
@@ -63,7 +62,7 @@ jobs:
           run: |
             SHORT_SHA="${{ needs.setup-env.outputs.short-sha }}"
             FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_CLIENT_REPO}}:${SHORT_SHA}"
-            echo "Image pushed to ECR: $FULL_URI"
+            echo "Vite server url: ${{secrets.VITE_SERVER_URL_VALUE}}"
             
             docker build \
                 --build-arg VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL_VALUE }} \
@@ -95,7 +94,6 @@ jobs:
           run: |
             SHORT_SHA="${{ needs.setup-env.outputs.short-sha }}"
             FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPO}}:${SHORT_SHA}"
-            echo "Image pushed to ECR: $FULL_URI"
 
             docker build \
                 -t $FULL_URI \
@@ -165,5 +163,4 @@ jobs:
           task-definition: ${{ steps.render-task-def.outputs.task-def-path }}
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
-          service-definition: ${{ env.SERVICE_DEFINITION_PATH }}
           wait-for-service-stability: true
