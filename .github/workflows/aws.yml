@@ -16,6 +16,7 @@ env:
   ECS_SERVICE: task_definition_mern_texteditor-github-actions-service-bq6mprnq # Use your service name
   ECS_CLUSTER: mern-TextEditor-Cluster-GitHubActions # Use your cluster name
   ECS_TASK_DEF_PATH: .aws/task-definition.json
+  SERVICE_DEFINITION_PATH: .aws/service-definition.json
   # Container Names in Task Definition
   CONTAINER_NAME_CLIENT: mern-texteditor-client-container
   CONTAINER_NAME_SERVER: mern-texteditor-server-container
@@ -164,4 +165,5 @@ jobs:
           task-definition: ${{ steps.render-task-def.outputs.task-def-path }}
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
+          service-definition: ${{ env.SERVICE_DEFINITION_PATH }}
           wait-for-service-stability: true
