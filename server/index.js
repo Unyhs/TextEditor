@@ -36,6 +36,10 @@ const io = new SocketIOServer(httpServer, {
     }
 });
 
+app.get('/status', (req, res) => {
+    res.status(200).json({ status: "ok", service: "texteditor-server" });
+});
+
 initializeSocket(io);
 
 //all calls for entities will go through here
