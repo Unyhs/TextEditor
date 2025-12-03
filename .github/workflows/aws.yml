@@ -3,9 +3,8 @@ name: Monorepo Deploy to ECS
 on:
   push:
     branches:
-      # Workflow now runs ONLY when code is pushed to this specific branch.
       - feature_actions_dep 
-  workflow_dispatch: # Allows manual triggering from the GitHub Actions UI
+  workflow_dispatch:
 
 env:
   AWS_REGION: ap-south-1
@@ -25,10 +24,21 @@ permissions:
   contents: read
 
 jobs:
+    setup-env:
+      runs-on: ubuntu-latest
+      outputs:
+        short-sha: ${{ steps.set-sha.outputs.short-sha }}
+      steps:
+      - name: calculate short sha
+        id: set-sha
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          echo "short-sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "Calculated SHORT_SHA: $SHORT_SHA"
+   
     build-client:
+        needs: setup-env
         runs-on: ubuntu-latest
-        outputs:
-          image: ${{ steps.set-tag-client.outputs.ECR_CLIENT_IMAGE_URI }}
         steps:
         - name: Checkout
           uses: actions/checkout@v4
@@ -44,30 +54,23 @@ jobs:
           id: login-ecr
           uses: aws-actions/amazon-ecr-login@v1
 
-        - name: Set Image Tag and URI
-          id: set-tag-client
+        - name: Tag, Build and push Client image
+          id: build-image-client
           run: |
-            SHORT_SHA=$(git rev-parse --short HEAD)
+            SHORT_SHA="${{ needs.setup-env.outputs.short-sha }}"
             FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_CLIENT_REPO}}:${SHORT_SHA}"
-            echo "ECR_CLIENT_IMAGE_URI=$FULL_URI" >> $GITHUB_OUTPUT
-
-        - name: Build and push Client image
-          id: build-image
-          run: |
-            IMAGE_URI=${{ steps.set-tag-client.outputs.ECR_CLIENT_IMAGE_URI }}
-            echo "Image pushed to ECR: $IMAGE_URI"
+            echo "Image pushed to ECR: $FULL_URI"
             
             docker build \
                 --build-arg VITE_SERVER_URL=${{ secrets.VITE_SERVER_URL_VALUE }} \
-                -t $IMAGE_URI \
+                -t $FULL_URI \
                 ./client
-            docker push $IMAGE_URI
-            echo "Client Image pushed to ECR: $IMAGE_URI"
+            docker push $FULL_URI
+            echo "Client Image pushed to ECR: $FULL_URI"
     
     build-server:
+        needs: setup-env
         runs-on: ubuntu-latest
-        outputs:
-          image: ${{ steps.set-tag-server.outputs.ECR_SERVER_IMAGE_URI }}
         steps:
         - name: Checkout
           uses: actions/checkout@v4
@@ -83,27 +86,21 @@ jobs:
           id: login-ecr
           uses: aws-actions/amazon-ecr-login@v1
 
-        - name: Set Image Tag and URI
-          id: set-tag-server
-          run: |
-            SHORT_SHA=$(git rev-parse --short HEAD)
-            FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPO}}:${SHORT_SHA}"
-            echo "ECR_SERVER_IMAGE_URI=$FULL_URI" >> $GITHUB_OUTPUT
-
         - name: Build and push Server image
-          id: build-image
+          id: build-image-server
           run: |
-            IMAGE_URI=${{ steps.set-tag-server.outputs.ECR_SERVER_IMAGE_URI }}
-            echo "Image pushed to ECR: $IMAGE_URI"
-            
+            SHORT_SHA="${{ needs.setup-env.outputs.short-sha }}"
+            FULL_URI="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPO}}:${SHORT_SHA}"
+            echo "Image pushed to ECR: $FULL_URI"
+
             docker build \
-                -t $IMAGE_URI \
+                -t $FULL_URI \
                 ./server
-            docker push $IMAGE_URI
-            echo "Server Image pushed to ECR: $IMAGE_URI"
+            docker push $FULL_URI
+            echo "Server Image pushed to ECR: $FULL_URI"
     
     deploy:
-      needs: [build-client, build-server] # Waits for both builds
+      needs: [build-server,build-client,setup-env]
       runs-on: ubuntu-latest
       
       steps:
@@ -117,12 +114,15 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Render Task Definition (Inject Images and Secrets)
+      - name: Render Task Definition
         id: render-task-def
-        env:
-          CLIENT_IMAGE: ${{ needs.build-client.outputs.image }}
-          SERVER_IMAGE: ${{ needs.build-server.outputs.image }}
         run: |
+          CLIENT_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_CLIENT_REPO}}:${{ needs.setup-env.outputs.short-sha }}"
+          SERVER_IMAGE="${{ env.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/${{ env.ECR_SERVER_REPO}}:${{ needs.setup-env.outputs.short-sha }}"
+          
+          echo "Using Client Image: $CLIENT_IMAGE"          
+          echo "Using Server Image: $SERVER_IMAGE"
+
           # Install jq for JSON processing
           sudo apt-get install jq -y
           
@@ -132,9 +132,6 @@ jobs:
           # Update Client Image
           TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$CLIENT_IMAGE" --arg NAME "$CONTAINER_NAME_CLIENT" \
             '.containerDefinitions[] |= if .name == $NAME then .image = $IMAGE else . end')
-
-          echo "Client Image received to ECR: $CLIENT_IMAGE"
-          echo "Server Image received to ECR: $SERVER_IMAGE"
 
           # Update Server Image AND Inject Secrets into Server Environment
           TASK_DEF=$(echo "$TASK_DEF" | jq --arg IMAGE "$SERVER_IMAGE" --arg NAME "$CONTAINER_NAME_SERVER" \
