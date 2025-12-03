@@ -29,6 +29,9 @@ jobs:
       outputs:
         short-sha: ${{ steps.set-sha.outputs.short-sha }}
       steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        
       - name: calculate short sha
         id: set-sha
         run: |
