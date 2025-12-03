@@ -7,7 +7,7 @@ export const axiosInstance=axios.create({
     headers:{
         "Content-Type":"application/json",
     },
-    baseURL:'SERVER_URL'
+    baseURL:SERVER_URL
 })
 
 axiosInstance.interceptors.request.use(function(config){
