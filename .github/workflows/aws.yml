@@ -158,7 +158,7 @@ jobs:
           echo "task-def-path=task-def-final.json" >> $GITHUB_OUTPUT
 
       - name: Deploy to Amazon ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v4
         with:
           task-definition: ${{ steps.render-task-def.outputs.task-def-path }}
           service: ${{ env.ECS_SERVICE }}
