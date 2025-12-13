@@ -32,7 +32,7 @@ function DocEditorTipTap() {
     const [docSeekers,setDocSeekers]=useState([]);
 
     const timerRef=useRef(null);
-    const quillRef = useRef(null);
+    const cursorsRef = useRef(new Map());
     const latestStateRef = useRef({ title: '', content: '' });
 
      useEffect(()=>{
@@ -395,7 +395,9 @@ function DocEditorTipTap() {
                 </div>
                 }
 
-                <TipTapEditor content={content} setContent={setContent} isAuthorizedToEdit={isAuthorizedToEdit} documentId={documentId} setActiveUsers={setActiveUsers}/>
+                <TipTapEditor content={content} setContent={setContent} 
+                isAuthorizedToEdit={isAuthorizedToEdit} documentId={documentId} 
+                setActiveUsers={setActiveUsers} cursorsRef={cursorsRef} />
 
               </div>
           </div>

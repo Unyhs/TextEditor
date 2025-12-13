@@ -97,15 +97,17 @@ const initializeSocket = (io) => {
             });
         });
 
-        // socket.on('cursor-update', ({ from, to }) => {
-        //     if (!currentDocId) return;
+        socket.on('cursor-update', ({ from, to,name,color }) => {
+            if (!currentDocId) return;
 
-        //     socket.to(currentDocId).emit('cursor-update', {
-        //         userId: userId,
-        //         from,
-        //         to
-        //     });
-        // })
+            socket.to(currentDocId).emit('cursor-update', {
+                userId: userId,
+                from,
+                to,
+                name,
+                color
+            });
+        })
     });
 };
 

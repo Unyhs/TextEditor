@@ -5,7 +5,6 @@ import ProtectedRoute from './components/ProtectedRoute'
 import RegisterPage from './pages/RegisterPage.jsx'
 import LoginPage from './pages/LoginPage.jsx'
 import Dashboard from './pages/Dashboard.jsx'
-import DocEditor from './pages/DocEditor.jsx'
 import DocEditorTipTap from './pages/DocEditorTipTap.jsx'
 
 const Redirect=()=>{

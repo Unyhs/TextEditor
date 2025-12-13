@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react'
-import {useEditor,EditorContent, useEditorState} from "@tiptap/react"
+import {useEditor,EditorContent, useEditorState, Extension} from "@tiptap/react"
 import StarterKit from "@tiptap/starter-kit"
 import { FaBold,FaItalic,FaListOl,FaListUl,FaUnderline } from "react-icons/fa";
 import HeadingDropdown from '../components/HeadingDropdown';
 import { socket } from '../services/index';
 import { useAuth } from '../hooks/AuthContext';
 import { Step } from "prosemirror-transform";
-
+import createCursorPlugin from '../components/createCursorPlugin.js';
 
 function MenuBar({editor}) {
     if(!editor){
@@ -47,10 +47,15 @@ function MenuBar({editor}) {
        </div>)
 }
 
-function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiveUsers}) {
+function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiveUsers,cursorsRef}) {
   const {user}=useAuth();
+  console.log("user is",user)
     const editor=useEditor({
-        extensions:[StarterKit],
+        extensions:[StarterKit,Extension.create({ 
+          addProseMirrorPlugins(){
+            return [createCursorPlugin(cursorsRef)];
+          }
+        })],
         content:content,
         onUpdate:({editor,transaction})=>{
 
@@ -63,20 +68,14 @@ function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiv
               setContent(html)
 
               const steps = transaction.steps.map(step => step.toJSON());
-              socket.emit("text-change", { steps })
-              {
-                console.log('Emitted text-change:', { steps });
-              }                    
+              socket.emit("text-change", { steps });               
             }
         },
-        // onSelectionUpdate:({editor})=>{
-        //   const { from, to } = editor.state.selection;
+        onSelectionUpdate:({editor})=>{
+          const { from, to } = editor.state.selection;
 
-        //   socket.emit('cursor-update', { from, to })
-        //   {
-        //     console.log("sending cursor update",from, " ",to);
-        //   }
-        // }
+          socket.emit('cursor-update', { from, to, name: user.name,color:user.cursorColor });
+        }
     })
 
      useEffect(() => {
@@ -121,6 +120,12 @@ function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiv
         socket.on('user-left', (data) => {
             console.log(`User ${data.userId} has left.`);
             setActiveUsers(prev=>prev.filter(u=>u!==data.userId));
+        });
+
+        socket.on('cursor-update', ({ userId, from, to,name,color }) => {
+          
+          cursorsRef.current.set(userId, { from,to,name,color });
+          editor.view.dispatch(editor.state.tr);
         });
         
         return () => {
