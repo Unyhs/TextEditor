@@ -78,12 +78,12 @@ const initializeSocket = (io) => {
             }
         });
 
-        socket.on('text-change', async (delta) => {
+        socket.on('text-change', async ({steps}) => {
             if (!currentDocId) return;
 
             socket.to(currentDocId).emit('text-change', {
                 userId: userId,
-                delta: delta 
+                steps: steps
             });
         });
 
@@ -96,6 +96,16 @@ const initializeSocket = (io) => {
                 ...data 
             });
         });
+
+        // socket.on('cursor-update', ({ from, to }) => {
+        //     if (!currentDocId) return;
+
+        //     socket.to(currentDocId).emit('cursor-update', {
+        //         userId: userId,
+        //         from,
+        //         to
+        //     });
+        // })
     });
 };
 
