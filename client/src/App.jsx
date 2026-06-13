@@ -1,4 +1,6 @@
 import './App.css'
+import { useEffect } from 'react'
+import { socket } from './services/index';
 import AuthContextWrapper, { useAuth } from './hooks/AuthContext.jsx'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -15,6 +17,18 @@ const Redirect=()=>{
 }
 
 function App() {
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      socket.auth = { token };
+      socket.connect();
+    }
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <div className='flex items-center w-full justify-center'>

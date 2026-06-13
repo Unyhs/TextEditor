@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link,useNavigate } from 'react-router-dom';
 import { loginUser } from '../services/user';
 import { useAuth } from '../hooks/AuthContext';
+import { Divider } from 'antd';
+import { socket } from '../services/index';
 
 const FormItem = ({ label, name, type = 'text', placeholder, value, onChange, required = true }) => (
     <div className="mb-4">
@@ -46,6 +48,17 @@ function LoginPage() {
             if (response.success) {
                 setMessage({ text: response.message, type: 'success' });
                 localStorage.setItem("token",response.data)
+                socket.auth={token:response.data}
+                socket.connect();
+
+                setTimeout(() => {
+                if (socket.connected) {
+                    console.log("Connection successful!");
+                } else {
+                    console.log("Connection failed.");
+                }
+                }, 1000);
+                
                 await getCurrUser();
                 resetForm();
                 navigate('/dashboard');
@@ -99,7 +112,8 @@ function LoginPage() {
     );
 
     return (
-        <div className="flex justify-center items-center min-h-screen w-11/12 bg-gray-100">
+        <div className="flex flex-col justify-center items-center min-h-screen w-11/12 bg-gray-100">
+            <h1 className='text-gray-500 mb-8 underline'>CollaborateX</h1>
             {/* Main Card Container */}
             <div className="flex flex-col w-full max-w-md bg-white rounded-xl shadow-2xl p-6 transition duration-300">
                 

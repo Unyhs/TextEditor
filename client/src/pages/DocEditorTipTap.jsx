@@ -1,19 +1,14 @@
-import {useEffect, useState } from 'react'
+import {useEffect, useState,useRef } from 'react'
 import { useParams,useNavigate } from 'react-router-dom'
 import { getDocById, giveEditAccess, seekEditAccess, updateDocById } from '../services/doc';
-import { FaRegSave } from "react-icons/fa";
 import { IoCloseCircleOutline } from "react-icons/io5";
-import { useRef } from 'react';
-import { socket } from '../services/index';
-import {useAuth} from '../hooks/AuthContext';
-import {grammarCheck,enhance,summarize} from '../services/ai'
-import { FaEye } from "react-icons/fa";
-import { FaCheck } from "react-icons/fa";
+import { FaEye,FaCheck,FaRegSave } from "react-icons/fa";
 import TipTapEditor from './TipTapEditor';
+import AICheck from '../components/AICheck';
+import { BsPencilSquare } from 'react-icons/bs';
 
 function DocEditorTipTap() {
     const {documentId}=useParams();
-    const {user}=useAuth();
     const screenHeight=window.innerHeight;
     const navigate=useNavigate();
     const [title,setTitle]=useState('');
@@ -121,69 +116,6 @@ function DocEditorTipTap() {
         }
     }
 
-    const aiGrammarCheck=async()=>{
-        setAiProcessing(true);
-        try{
-            const response=await grammarCheck(latestStateRef.current.content);
-            if(response && response.success)
-            {
-                setAiResult(response.data)
-                setShowResult(true);
-            }else
-            {
-                console.log("error")
-            }
-        }catch(error)
-        {
-            console.log("Error encountered in grammar check",error)
-        }finally
-        {
-            setAiProcessing(false);
-        }
-    }
-
-    const aiEnhance=async()=>{
-        setAiProcessing(true);
-        try{
-            const response=await enhance(latestStateRef.current.content);
-            if(response && response.success)
-            {
-                setAiResult(response.data)
-                setShowResult(true);
-            }else
-            {
-                console.log("error")
-            }
-        }catch(error)
-        {
-            console.log("Error encountered in enhance",error)
-        }finally
-        {
-            setAiProcessing(false);
-        }
-    }
-
-    const aiSummarize=async()=>{
-        setAiProcessing(true);
-        try{
-            const response=await summarize(latestStateRef.current.content);
-            if(response && response.success)
-            {
-                setAiResult(response.data)
-                setShowResult(true);
-            }else
-            {
-                console.log("error")
-            }
-        }catch(error)
-        {
-            console.log("Error encountered in summarize",error)
-        }finally
-        {
-            setAiProcessing(false);
-        }
-    }
-
     const onClose=()=>{
       navigate("/");
     }
@@ -257,50 +189,67 @@ function DocEditorTipTap() {
                 backgroundColor: 'rgba(0, 0, 0, 0.4)',
                 backdropFilter: 'blur(5px)',
                 }}>
-          <div className='bg-white p-10 rounded-2xl shadow-md w-11/12 md:w-2/3 lg:w-1/2' style={{height:0.95*screenHeight}}>
+          <div className='bg-white p-2 md:p-10 rounded-2xl shadow-md w-11/12 md:w-2/3 lg:w-1/2' style={{height:0.95*screenHeight}}>
 
-              <header className="flex items-center justify-between p-4 border-b border-gray-200 flex-shrink-0">
+              <header className="flex items-center justify-between p-1 md:p-4 border-b border-gray-200 flex-shrink-0">
                   <div className="flex-grow min-w-0">
                       <input
                           type="text"
                           value={title}
                           disabled={!isAuthorizedToEdit}
                           onChange={(e) => setTitle(e.target.value)}
-                          className="text-xl font-bold text-gray-800 border-none focus:ring-0 w-full bg-transparent p-1 -m-1"
+                          className="text-xl font-bold text-gray-800 border-none focus:ring-0 w-full bg-transparent p-1 m-1"
                           aria-label="Document Title"
                       />
                   </div>
 
-                  <div className="flex space-x-3 ml-4">
-                    <div className='flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
-                                    bg-green-900 text-white shadow-md'>
-                          <FaEye className="w-5 h-5 mr-2" />
-                          {activeUsers.length}
-                    </div>
-
+                  <div className="flex space-x-1 md:space-x-3 ml-4">
                     <div
                         onClick={updateDocumentData}
                         disabled={isSaving}
-                        className={`flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
-                            ${isSaving ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-900 hover:bg-indigo-600 hover:cursor-pointer text-white shadow-md'}`}
+                        className={`hidden md:flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                            ${isSaving ? 'bg-green-400 cursor-not-allowed' : 'bg-green-900 hover:bg-green-600 hover:cursor-pointer text-white shadow-md'}`}
                     >
                         <FaRegSave className="w-5 h-5 mr-2" />
                         {isSaving ? 'Saving...' : 'Save'}
                     </div>
 
-                    {!isAuthorizedToEdit && !isAccPerDisabled && <div onClick={handleSeekEditAccess} className='flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
-                                    bg-orange-900 text-white shadow-md hover:cursor-pointer hover:bg-orange-700'>
-                          Get Edit Access
-                    </div>}
+                    <div
+                        onClick={updateDocumentData}
+                        disabled={isSaving}
+                        className={`flex md:hidden items-center
+                            ${isSaving ? 'cursor-not-allowed' : 'hover:cursor-pointer'}`}
+                    >
+                        {isSaving ? <FaRegSave color={'red'} className="w-5 h-5 mr-2" /> : <FaRegSave color={'green'} className="w-5 h-5 mr-2" />}
+                    </div>
 
-                    {!isAuthorizedToEdit && isAccPerDisabled && <div className='flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
-                                    bg-orange-900 text-white shadow-md'>
-                        Access Pending
-                    </div>}
+                    {!isAuthorizedToEdit &&
+                        <>
+                            <div 
+                            onClick={handleSeekEditAccess} 
+                            disabled={isAccPerDisabled}
+                            className='hidden md:flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                                        bg-white md:bg-orange-900 text-white shadow-md hover:cursor-pointer hover:bg-orange-700'>
+                            <BsPencilSquare  className="w-5 h-5 mr-2" /> 
+                            <span>
+                                {isAccPerDisabled? 'Requested':'Edit'}
+                            </span>
+                            </div>
+
+                            <div
+                            onClick={handleSeekEditAccess}
+                            disabled={isAccPerDisabled}
+                            className={`flex md:hidden items-center
+                                ${isAccPerDisabled ? 'hover:cursor-pointer':'cursor-not-allowed'}`}
+                            >
+                                <BsPencilSquare color={isAccPerDisabled? 'grey':'orange'} className="w-5 h-5" /> 
+                            </div>
+                        </>
+                    }
                     
                     <div
                         onClick={onClose}
-                        className="p-2 text-gray-500 hover:bg-gray-200 rounded-full transition duration-150"
+                        className="p-1 md:p-2 text-gray-500 hover:bg-gray-200 rounded-full transition duration-150"
                         title="Close Document"
                     >
                         <IoCloseCircleOutline className="w-6 h-6" />
@@ -309,58 +258,20 @@ function DocEditorTipTap() {
               </header>
 
               <div className="min-w-full my-4 min-h-full">
-                <div className="mb-2 p-2 rounded flex-col items-center">
-                        <span className="text-indigo-800 font-bold">Check out our AI Tools</span>
-                        <div className='flex items-center w-full justify-center gap-4 mt-4'>
-                            <span
-                            onClick={aiGrammarCheck}
-                            className="text-white bg-indigo-600 font-bold
-                                        hover:bg-white hover:text-indigo-600 hover:border-2 hover: border-indigo-600 hover:cursor-pointer
-                                        px-4 py-1 rounded-full 
-                                        shadow-lg 
-                                        transition-all duration-300 
-                                        flex items-center space-x-2 
-                                        transform"
-                            >
-                            <span className="hidden sm:inline">Grammar Check</span>
-                            </span>
-
-                            <span
-                                onClick={aiSummarize}
-                                className="text-white bg-indigo-600 font-bold
-                                        hover:bg-white hover:text-indigo-600 hover:border-2 hover: border-indigo-600 hover:cursor-pointer
-                                        px-4 py-1 rounded-full 
-                                        shadow-lg 
-                                        transition-all duration-300 
-                                        flex items-center space-x-2 
-                                        transform"
-                                >
-                                <span className="hidden sm:inline">Summary</span>
-                            </span>
-
-                            <span
-                            onClick={aiEnhance}
-                                className="text-white bg-indigo-600 font-bold
-                                        hover:bg-white hover:text-indigo-600 hover:border-2 hover: border-indigo-600 hover:cursor-pointer
-                                        px-4 py-1 rounded-full 
-                                        shadow-lg 
-                                        transition-all duration-300 
-                                        flex items-center space-x-2 
-                                        transform"
-                                >
-                                <span className="hidden sm:inline">Enhance</span>
-                            </span>
-                        </div>
-                </div>
+                <AICheck setAiProcessing={setAiProcessing} setShowResult={setShowResult} setAiResult={setAiResult} latestStateRef={latestStateRef}/>
 
                 {showResult && 
                 <div className='bg-indigo-100 flex-col items-start p-4 relative'>
                     <div className='justify-self-start'>
                         Results:
                     </div>
+                    {aiResult ?
                     <div className='justify-self-start bg-white mb-4 w-full rounded-xl p-2 text-justify'>
                         {aiResult}
-                    </div>
+                    </div> : 
+                    <div className='justify-self-start bg-white mb-4 w-full rounded-xl p-2 text-justify'>
+                        Error fetching AI results. Please try again.
+                    </div>}
                     <div
                           onClick={handleResultClose}
                           className="p-2 absolute top-1 right-2 text-gray-500 hover:bg-gray-200 rounded-full transition duration-150"
@@ -370,6 +281,9 @@ function DocEditorTipTap() {
                       </div>
                 </div>}
 
+                <TipTapEditor content={content} setContent={setContent} 
+                isAuthorizedToEdit={isAuthorizedToEdit} documentId={documentId} 
+                setActiveUsers={setActiveUsers} cursorsRef={cursorsRef} />
 
                 {isOwner && docSeekers && docSeekers.length>0 &&
                 <div>
@@ -394,10 +308,6 @@ function DocEditorTipTap() {
                     }
                 </div>
                 }
-
-                <TipTapEditor content={content} setContent={setContent} 
-                isAuthorizedToEdit={isAuthorizedToEdit} documentId={documentId} 
-                setActiveUsers={setActiveUsers} cursorsRef={cursorsRef} />
 
               </div>
           </div>
