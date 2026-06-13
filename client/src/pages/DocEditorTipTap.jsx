@@ -1,19 +1,17 @@
-import React, { use, useEffect, useState } from 'react'
+import {useEffect, useState } from 'react'
 import { useParams,useNavigate } from 'react-router-dom'
 import { getDocById, giveEditAccess, seekEditAccess, updateDocById } from '../services/doc';
 import { FaRegSave } from "react-icons/fa";
 import { IoCloseCircleOutline } from "react-icons/io5";
-import { FaRegTrashCan } from "react-icons/fa6";
-import ReactQuill from 'react-quill';
-import 'react-quill/dist/quill.snow.css'; // The default theme
 import { useRef } from 'react';
 import { socket } from '../services/index';
 import {useAuth} from '../hooks/AuthContext';
 import {grammarCheck,enhance,summarize} from '../services/ai'
 import { FaEye } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa";
+import TipTapEditor from './TipTapEditor';
 
-function DocEditor() {
+function DocEditorTipTap() {
     const {documentId}=useParams();
     const {user}=useAuth();
     const screenHeight=window.innerHeight;
@@ -34,7 +32,7 @@ function DocEditor() {
     const [docSeekers,setDocSeekers]=useState([]);
 
     const timerRef=useRef(null);
-    const quillRef = useRef(null);
+    const cursorsRef = useRef(new Map());
     const latestStateRef = useRef({ title: '', content: '' });
 
      useEffect(()=>{
@@ -67,48 +65,6 @@ function DocEditor() {
         latestStateRef.current.title = title;
         latestStateRef.current.content = content;
     }, [title, content]);
-
-    useEffect(() => {
-        if (!documentId) return;
-        
-        socket.emit('join-document', documentId, (response) => {
-            if (response.success) {
-                setActiveUsers(response.activeUsers || []);
-                console.log(`Joined room: ${response.docId}`);
-            }
-        });
-
-        socket.on('text-change', (data) => {
-            const editor = quillRef.current.getEditor();
-            
-            if (isAuthorizedToEdit && editor && data.delta) {
-                editor.updateContents(data.delta);
-            }
-        });
-        
-        socket.on('user-joined', (data) => {
-            console.log(`User ${data.userId} has joined.`);
-            setActiveUsers(prev => {
-            if (!prev.includes(data.userId)) {
-                return [...prev, data.userId];
-            }
-            return prev;
-            });
-        });
-
-        socket.on('user-left', (data) => {
-            console.log(`User ${data.userId} has left.`);
-            setActiveUsers(prev=>prev.filter(u=>u!==data.userId));
-        });
-        
-        return () => {
-            socket.off('text-change');
-            socket.off('user-joined');
-            socket.off('user-left');
-            socket.emit('leave-document');
-            setActiveUsers(prev=>prev.filter(u=>u!==user.userId));
-        };
-    }, [documentId, isAuthorizedToEdit]); 
 
     const getDocumentData=async(id)=>{
         setIsLoading(true);
@@ -396,6 +352,7 @@ function DocEditor() {
                             </span>
                         </div>
                 </div>
+
                 {showResult && 
                 <div className='bg-indigo-100 flex-col items-start p-4 relative'>
                     <div className='justify-self-start'>
@@ -412,21 +369,7 @@ function DocEditor() {
                           <IoCloseCircleOutline className="w-6 h-6" />
                       </div>
                 </div>}
-                <ReactQuill 
-                    theme="snow"
-                    ref={quillRef}
-                    value={content} 
-                    readOnly={!isAuthorizedToEdit}
-                    onChange={(value,delta,source) => {
-                        setContent(value); 
 
-                        if(source === 'user' && isAuthorizedToEdit){
-                            socket.emit('text-change', delta);
-                        }
-
-                    }}
-                    className="mb-4"
-                />
 
                 {isOwner && docSeekers && docSeekers.length>0 &&
                 <div>
@@ -451,23 +394,10 @@ function DocEditor() {
                     }
                 </div>
                 }
-                
-                {/* 
-                <div className="min-w-full my-4">
-                {activeUsers.length > 0 && (
-                    <div className="mb-2 p-2 bg-blue-100 rounded">
-                        <span className="text-sm text-blue-800 font-medium">Active Users: </span>
-                        {activeUsers.map((userName, index) => (
-                            <span key={index} className="text-sm text-blue-700 mr-2">{userName}</span>
-                        ))}
-                    </div>
-                )}
-                {activeUsers.length === 0 && (
-                    <div className="mb-2 p-2 bg-gray-100 rounded">
-                        <p className="text-sm text-gray-600 font-medium">No active users currently.</p>
-                    </div>
-                )}
-                </div> */}
+
+                <TipTapEditor content={content} setContent={setContent} 
+                isAuthorizedToEdit={isAuthorizedToEdit} documentId={documentId} 
+                setActiveUsers={setActiveUsers} cursorsRef={cursorsRef} />
 
               </div>
           </div>
@@ -476,4 +406,4 @@ function DocEditor() {
   )
 }
 
-export default DocEditor
+export default DocEditorTipTap

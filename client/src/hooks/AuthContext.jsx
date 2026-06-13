@@ -8,7 +8,13 @@ const AuthContextWrapper=({children})=>{
     const [token,setToken]=useState(null);
     const [loading,setLoading]=useState(true);
     const [isAuthenticated,setIsAuthenticated]=useState(false);
-    console.log("user in auth context", user, "isAuthenticated",isAuthenticated)
+
+    const updateCursorColor=()=>{
+        if(!user) return;
+        const colors=["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#33FFF5", "#F5FF33"];
+        const randomColor=colors[Math.floor(Math.random()*colors.length)];
+        return randomColor;
+    }
 
     useEffect(()=>{
         const savedToken = localStorage.getItem('token');
@@ -21,7 +27,7 @@ const AuthContextWrapper=({children})=>{
        try{
         const response=await getCurrentUser();
         if(response.success){
-            setUser(response.data);
+            setUser({...response.data,cursorColor:updateCursorColor()});
             setIsAuthenticated(true);
             setLoading(false);
         }else{
@@ -40,6 +46,7 @@ const AuthContextWrapper=({children})=>{
         localStorage.removeItem('token');
         setLoading(false);
     }
+
 
     useEffect(() => {
         if (token) {
