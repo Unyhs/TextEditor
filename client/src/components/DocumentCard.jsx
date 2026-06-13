@@ -25,7 +25,31 @@ function DocumentCard({ document }) {
     };
 
     return (
-        <div className="w-full max-w-xs transition-transform hover:scale-[1.02] duration-300">
+        <>
+        {/* ================= MOBILE ROW VIEW ================= */}
+        <div
+            onClick={handleCardClick}
+            className="sm:hidden bg-white border border-gray-200 rounded-lg pt-4
+                    shadow-sm hover:bg-gray-50 cursor-pointer relative mb-4"
+        >
+            <div className="flex items-center ml-4 shrink-0 absolute top-4 right-4">
+                <permission.icon className={`w-4 h-4 mr-1 ${permission.color}`} />
+            </div>
+            <div className='flex flex-col p-2'>
+                <p className="font-semibold text-gray-900 truncate">
+                    {document.title}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                    Owner: {document.ownerName}
+                </p>
+            </div>
+            <div className="px-4 pb-3 pt-1 border-t border-gray-50 text-xs text-gray-400">
+                Last Modified: {formatSimpleDateTime(document.lastModified)} 
+            </div>
+        </div>
+
+        {/* ================= DESKTOP CARD VIEW ================= */}        
+        <div className="hidden sm:block w-full max-w-xs transition-transform hover:scale-[1.02] duration-300">
             <div className={cardAspectRatioClass}>
                 <div 
                     className="absolute inset-0 bg-white rounded-xl shadow-lg 
@@ -72,6 +96,8 @@ function DocumentCard({ document }) {
                 </div>
             </div>
         </div>
+        </>
+        
     );
 }
 

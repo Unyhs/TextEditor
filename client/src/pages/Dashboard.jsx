@@ -81,7 +81,7 @@ function Dashboard() {
     return (
         <div className="relative min-h-screen w-full flex flex-col items-center p-2">
 
-            <div className='w-full bg-indigo-600 flex justify-end items-center gap-4'>
+            <div className='w-full bg-indigo-600 flex justify-end items-center gap-2 sm:gap-4'>
                         <div className="flex items-center space-x-4 p-4">
                             <FaUser className="w-4 h-4 mr-2 text-white" /> 
                             <p className="text-xl text-white">
@@ -93,9 +93,9 @@ function Dashboard() {
                         <div
                             onClick={logoutUser}
                             className="text-white text-xl
-                                    bg-indigo-600 mr-16
-                                    flex items-center space-x-2
-                                    hover:cursor-pointer"
+                                    bg-indigo-600 mr-4 md:mr-16
+                                    flex items-end md:items-center
+                                    hover:cursor-pointer md:gap-2"
                             title="Logout"
                         >
                             <IoMdLogOut />

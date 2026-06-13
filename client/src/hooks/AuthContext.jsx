@@ -1,5 +1,7 @@
 import { createContext,useContext,useEffect, useState } from "react"
 import { getCurrentUser } from '../services/user';
+import { socket } from '../services/index';
+import { useNavigate } from "react-router-dom";
 
 export const AuthContext=createContext({user:null, isAuthenticated:false, loading:true});
 
@@ -8,6 +10,7 @@ const AuthContextWrapper=({children})=>{
     const [token,setToken]=useState(null);
     const [loading,setLoading]=useState(true);
     const [isAuthenticated,setIsAuthenticated]=useState(false);
+    const navigate=useNavigate();
 
     const updateCursorColor=()=>{
         if(!user) return;
@@ -18,7 +21,7 @@ const AuthContextWrapper=({children})=>{
 
     useEffect(()=>{
         const savedToken = localStorage.getItem('token');
-        console.log("saved toklen",savedToken)
+        //console.log("saved toklen",savedToken)
         if (savedToken) setToken(savedToken);
         else setLoading(false);
     },[])
@@ -45,6 +48,9 @@ const AuthContextWrapper=({children})=>{
         setToken(null);
         localStorage.removeItem('token');
         setLoading(false);
+        socket.auth={token:null};
+        socket.disconnect();
+        navigate('/login');
     }
 
 

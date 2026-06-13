@@ -13,7 +13,7 @@ function MenuBar({editor}) {
         return null
     }
 
-    return (<div className="mb-2">
+    return (<div className="mb-2 gap-2">
         <HeadingDropdown editor={editor} />
         <button 
             onClick={()=>editor.chain().focus().toggleBold().run()}
@@ -49,7 +49,6 @@ function MenuBar({editor}) {
 
 function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiveUsers,cursorsRef}) {
   const {user}=useAuth();
-  console.log("user is",user)
     const editor=useEditor({
         extensions:[StarterKit,Extension.create({ 
           addProseMirrorPlugins(){
