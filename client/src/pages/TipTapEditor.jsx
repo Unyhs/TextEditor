@@ -14,41 +14,46 @@ function MenuBar({editor}) {
     }
 
     return (<div className="mb-2 gap-2">
-        <HeadingDropdown editor={editor} />
-        <button 
-            onClick={()=>editor.chain().focus().toggleBold().run()}
-            disabled={!editor.can().chain().focus().toggleBold().run()}
-        >
-         <FaBold size={16} color='black' fontWeight={'bold'}/>
-        </button>
-        <button 
-            onClick={()=>editor.chain().focus().toggleItalic().run()}
-            disabled={!editor.can().chain().focus().toggleItalic().run()}
-        >
-        <FaItalic size={16} color='black' fontWeight={'bold'}/>
-        </button>
-        <button
-            onClick={()=>editor.chain().focus().toggleUnderline().run()}
-            disabled={!editor.can().chain().focus().toggleUnderline().run()}>
-            <FaUnderline size={16} color='black' fontWeight={'bold'}/>
-        </button>
-        <button
-            onClick={()=>editor.chain().focus().toggleBulletList().run()}
-            disabled={!editor.can().chain().focus().toggleBulletList().run()}
-        >
-          <FaListUl size={16} color='black' fontWeight={'bold'}/>
-        </button>
-        <button
-            onClick={()=>editor.chain().focus().toggleOrderedList().run()}
-            disabled={!editor.can().chain().focus().toggleOrderedList().run()}
-        >
-          <FaListOl size={16} color='black' fontWeight={'bold'}/>
-        </button>
+        
+        <fieldset
+        disabled={!editor.isEditable} 
+        className="inline-flex gap-2 border-none p-0 m-0">
+          <HeadingDropdown editor={editor} />
+          <button 
+              onClick={()=>editor.chain().focus().toggleBold().run()}
+              disabled={!editor.can().chain().focus().toggleBold().run()}
+          >
+          <FaBold size={16} color='black' />
+          </button>
+          <button 
+              onClick={()=>editor.chain().focus().toggleItalic().run()}
+              disabled={!editor.can().chain().focus().toggleItalic().run()}
+          >
+          <FaItalic size={16} color='black' />
+          </button>
+          <button
+              onClick={()=>editor.chain().focus().toggleUnderline().run()}
+              disabled={!editor.can().chain().focus().toggleUnderline().run()}>
+              <FaUnderline size={16} color='black'/>
+          </button>
+          <button
+              onClick={()=>editor.chain().focus().toggleBulletList().run()}
+              disabled={!editor.can().chain().focus().toggleBulletList().run()}
+          >
+            <FaListUl size={16} color='black' />
+          </button>
+          <button
+              onClick={()=>editor.chain().focus().toggleOrderedList().run()}
+              disabled={!editor.can().chain().focus().toggleOrderedList().run()}
+          >
+            <FaListOl size={16} color='black' />
+          </button>
+        </fieldset>
        </div>)
 }
 
 function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiveUsers,cursorsRef}) {
-  const {user}=useAuth();
+    const {user}=useAuth();
     const editor=useEditor({
         extensions:[StarterKit,Extension.create({ 
           addProseMirrorPlugins(){
@@ -56,6 +61,7 @@ function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiv
           }
         })],
         content:content,
+        editable:isAuthorizedToEdit,
         onUpdate:({editor,transaction})=>{
 
             if(isAuthorizedToEdit && transaction.docChanged===false) return;
@@ -77,7 +83,7 @@ function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiv
         }
     })
 
-     useEffect(() => {
+    useEffect(() => {
         if (!documentId) return;
         
         socket.emit('join-document', documentId, (response) => {

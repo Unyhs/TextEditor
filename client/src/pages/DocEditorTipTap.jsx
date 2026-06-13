@@ -141,7 +141,6 @@ function DocEditorTipTap() {
 
     const handleGiveEditAccess=async(seekerId)=>{
         try{
-            console.log("seekerId",seekerId)
             const payload={id:documentId,seekerId:seekerId}
             const response =await giveEditAccess(payload);
             if(response && response.success){
