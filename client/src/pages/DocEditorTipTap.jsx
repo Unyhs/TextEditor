@@ -6,6 +6,7 @@ import { FaEye,FaCheck,FaRegSave } from "react-icons/fa";
 import TipTapEditor from './TipTapEditor';
 import AICheck from '../components/AICheck';
 import { BsPencilSquare } from 'react-icons/bs';
+import { MdManageAccounts } from "react-icons/md";
 
 function DocEditorTipTap() {
     const {documentId}=useParams();
@@ -127,6 +128,12 @@ function DocEditorTipTap() {
     }
 
     const handleSeekEditAccess=async()=>{
+
+        if(isAccPerDisabled) {
+                alert("You have already requested edit access. Please wait for the document owner to respond.")
+                return;
+        }
+
         try{
             const response =await seekEditAccess(documentId);
             if(response && response.success){
@@ -222,24 +229,43 @@ function DocEditorTipTap() {
                         {isSaving ? <FaRegSave color={'red'} className="w-5 h-5 mr-2" /> : <FaRegSave color={'green'} className="w-5 h-5 mr-2" />}
                     </div>
 
+                    {isOwner && <div
+                        onClick={()=>{alert("Manage permissions clicked")}}
+                        className='hidden md:flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                             bg-indigo-900 hover:bg-indigo-600 hover:cursor-pointer text-white shadow-md'
+                    >
+                        <MdManageAccounts className="w-5 h-5 mr-2" />
+                        Manage Permissions
+                    </div>}
+
+                    {isOwner && <div
+                        onClick={()=>{alert("Manage permissions clicked")}}
+                        className='flex md:hidden items-center
+                            hover:cursor-pointer'
+                    >
+                        <MdManageAccounts color={'indigo'} className="w-5 h-5 mr-2" />
+                    </div>}
+ 
+                    
+
                     {!isAuthorizedToEdit &&
                         <>
                             <div 
                             onClick={handleSeekEditAccess} 
                             disabled={isAccPerDisabled}
-                            className='hidden md:flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
-                                        bg-white md:bg-orange-900 text-white shadow-md hover:cursor-pointer hover:bg-orange-700'>
-                            <BsPencilSquare  className="w-5 h-5 mr-2" /> 
-                            <span>
-                                {isAccPerDisabled? 'Requested':'Edit'}
-                            </span>
+                            className={`hidden md:flex items-center px-4 py-2 text-sm font-medium rounded-lg transition duration-150 
+                                        bg-white md:bg-orange-900 text-white shadow-md ${isAccPerDisabled ? 'cursor-not-allowed' : 'cursor-pointer hover:bg-orange-700'}`}>
+                                <BsPencilSquare  className="w-5 h-5 mr-2" /> 
+                                <span>
+                                    {isAccPerDisabled? 'Requested':'Edit'}
+                                </span>
                             </div>
 
                             <div
                             onClick={handleSeekEditAccess}
                             disabled={isAccPerDisabled}
                             className={`flex md:hidden items-center
-                                ${isAccPerDisabled ? 'hover:cursor-pointer':'cursor-not-allowed'}`}
+                                ${isAccPerDisabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
                             >
                                 <BsPencilSquare color={isAccPerDisabled? 'grey':'orange'} className="w-5 h-5" /> 
                             </div>
@@ -284,7 +310,7 @@ function DocEditorTipTap() {
                 isAuthorizedToEdit={isAuthorizedToEdit} documentId={documentId} 
                 setActiveUsers={setActiveUsers} cursorsRef={cursorsRef} />
 
-                {isOwner && docSeekers && docSeekers.length>0 &&
+                {/* {isOwner && docSeekers && docSeekers.length>0 &&
                 <div>
                     <span className='font-bold text-indigo-900'>
                         Manage Permissions
@@ -293,20 +319,26 @@ function DocEditorTipTap() {
                     {docSeekers && docSeekers.length>0 && <div className='flex gap-4 mt-1 py-4'>
                         {docSeekers.map((seeker)=>
                         (<div key={seeker.id} className='flex justify-between p-4 border-1 border-gray-400 rounded-xl gap-4 '>
-                            <div>
-                                {seeker.name}
+                            <span>{seeker.name}</span>
+                            <div onClick={()=>{ handleGiveEditAccess(seeker.id)}} 
+                            className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
+                                <FaCheck className="w-4 h-4 mr-2 text-white" />
                             </div>
-                            <div onClick={()=>{
-                                console.log("seeker arg", seeker)
-                                handleGiveEditAccess(seeker.id)
-                            }} className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
-                                <FaCheck className="w-5 h-5 mr-2 text-white" />
+
+                            <div onClick={()=>{ handleGiveEditAccess(seeker.id)}} 
+                            className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
+                                <FaCheck className="w-4 h-4 mr-2 text-white" />
+                            </div>
+
+                            <div onClick={()=>{ handleGiveEditAccess(seeker.id)}} 
+                            className='bg-green-900 rounded-3xl p-2 flex items-center justify-center hover:cursor-pointer'>
+                                <FaCheck className="w-4 h-4 mr-2 text-white" />
                             </div>
                         </div>))}
                     </div>
                     }
                 </div>
-                }
+                } */}
 
               </div>
           </div>
