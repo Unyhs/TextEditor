@@ -7,9 +7,11 @@ import TipTapEditor from './TipTapEditor';
 import AICheck from '../components/AICheck';
 import { BsPencilSquare } from 'react-icons/bs';
 import { MdManageAccounts } from "react-icons/md";
+import { useAuth } from '../hooks/AuthContext';
 
 function DocEditorTipTap() {
     const {documentId}=useParams();
+    const {user}=useAuth();
     const screenHeight=window.innerHeight;
     const navigate=useNavigate();
     const [title,setTitle]=useState('');
@@ -20,11 +22,9 @@ function DocEditorTipTap() {
     const [isAccPerDisabled,setIsAccPerDisabled]=useState(false)
     const [isOwner,setIsOwner]=useState(false);
     const [activeUsers,setActiveUsers]=useState([]);
-
     const [aiProcessing,setAiProcessing]=useState(false);
     const [showResult,setShowResult]=useState(false);
     const [aiResult,setAiResult]=useState("");
-
     const [docSeekers,setDocSeekers]=useState([]);
 
     const timerRef=useRef(null);
@@ -72,7 +72,14 @@ function DocEditorTipTap() {
                 setContent(response.data.content);
                 setIsAuthorizedToEdit(response.data.isAuthorizedToEdit);
                 setIsOwner(response.data.isOwner)
-                
+                console.log(response.data.docSeekers)
+                console.log(user)
+                const userExists = response.data.docSeekers.some(seeker => seeker.id === user._id);
+
+                if(userExists) {
+                    setIsAccPerDisabled(true);
+                }
+
                 if(response.data.isOwner && response.data.docSeekers) 
                 {
                     setDocSeekers(response.data.docSeekers)
@@ -102,9 +109,16 @@ function DocEditorTipTap() {
                 setContent(response.data.content);
                 setIsAuthorizedToEdit(response.data.isAuthorizedToEdit);
                 setIsOwner(response.data.isOwner)
+                const userExists = response.data.docSeekers.some(seeker => seeker.id === user._id);
+
+                if(userExists) {
+                    setIsAccPerDisabled(true);
+                }
+
                 if(response.data.isOwner && response.data.docSeekers) 
                 {
                     setDocSeekers(response.data.docSeekers)
+                    
                 }
             }else
             {
