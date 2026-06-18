@@ -78,7 +78,6 @@ function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiv
         },
         onSelectionUpdate:({editor})=>{
           const { from, to } = editor.state.selection;
-
           socket.emit('cursor-update', { from, to, name: user.name,color:user.cursorColor });
         }
     })
@@ -128,7 +127,6 @@ function TipTapEditor({content,setContent,isAuthorizedToEdit,documentId,setActiv
         });
 
         socket.on('cursor-update', ({ userId, from, to,name,color }) => {
-          
           cursorsRef.current.set(userId, { from,to,name,color });
           editor.view.dispatch(editor.state.tr);
         });

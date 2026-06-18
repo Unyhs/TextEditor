@@ -32,6 +32,11 @@ function DocEditorTipTap() {
     const latestStateRef = useRef({ title: '', content: '' });
 
      useEffect(()=>{
+
+        if(!user){
+            return;
+        }
+        
         if(documentId){
             getDocumentData(documentId);
         }
@@ -165,7 +170,6 @@ function DocEditorTipTap() {
             const payload={id:documentId,seekerId:seekerId}
             const response =await giveEditAccess(payload);
             if(response && response.success){
-                console.log("Access given")
                 updateDocumentData();
             }else{
                 console.error('Failed to give access');

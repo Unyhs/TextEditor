@@ -13,7 +13,6 @@ const AuthContextWrapper=({children})=>{
     const navigate=useNavigate();
 
     const updateCursorColor=()=>{
-        if(!user) return;
         const colors=["#FF5733", "#33FF57", "#3357FF", "#F333FF", "#33FFF5", "#F5FF33"];
         const randomColor=colors[Math.floor(Math.random()*colors.length)];
         return randomColor;
@@ -21,7 +20,6 @@ const AuthContextWrapper=({children})=>{
 
     useEffect(()=>{
         const savedToken = localStorage.getItem('token');
-        //console.log("saved toklen",savedToken)
         if (savedToken) setToken(savedToken);
         else setLoading(false);
     },[])
@@ -30,7 +28,8 @@ const AuthContextWrapper=({children})=>{
        try{
         const response=await getCurrentUser();
         if(response.success){
-            setUser({...response.data,cursorColor:updateCursorColor()});
+            const cursorColor=updateCursorColor();
+            setUser({...response.data,cursorColor});
             setIsAuthenticated(true);
             setLoading(false);
         }else{

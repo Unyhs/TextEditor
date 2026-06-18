@@ -99,7 +99,6 @@ const initializeSocket = (io) => {
 
         socket.on('cursor-update', ({ from, to,name,color }) => {
             if (!currentDocId) return;
-
             socket.to(currentDocId).emit('cursor-update', {
                 userId: userId,
                 from,
